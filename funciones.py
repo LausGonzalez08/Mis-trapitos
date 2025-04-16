@@ -4,9 +4,8 @@ from logininterfaz import LoginView, RegisterView, messagebox
 class AppController:
     def __init__(self):
         self.model = UserModel()
-        self.main_view = MainView()
-        self.main_view.withdraw()
-        self.login_view = LoginView(self.main_view, self)
+        self.main_view = None
+        self.login_view = LoginView(None, self)
         self.register_view = None
 
     def login(self):
@@ -15,8 +14,10 @@ class AppController:
         print(usuario)
         print(contraseña)
         if self.model.validate_credentials(usuario, contraseña):
+            is_admin = self.model.is_admin(usuario)
+            self.main_view = MainView(username=usuario, is_admin=is_admin)
             self.login_view.destroy()
-            self.main_view.deiconify()
+            self.main_view.mainloop()
         else:
             messagebox.showerror("Error", "Credenciales incorrectas")
 

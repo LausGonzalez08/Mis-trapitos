@@ -49,3 +49,11 @@ class UserModel:
         valid = cursor.fetchone() is not None
         conn.close()
         return valid
+    
+    def is_admin(self, username):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT admin FROM users WHERE username = ?", (username,))
+        row = cursor.fetchone()
+        conn.close()
+        return bool(row[0]) if row else False

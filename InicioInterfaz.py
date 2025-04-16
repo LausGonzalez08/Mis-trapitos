@@ -1,9 +1,16 @@
 import tkinter as tk
 
 class MainView(tk.Tk):
-    def __init__(self):
+    def __init__(self, username='', is_admin=False):
         super().__init__()
-        self.title("Inicio")
+        self.username = username
+        self.is_admin = is_admin
+
+        titulo = f"Inicio - {self.username}"
+        if self.is_admin:
+            titulo += " (Admin)"
+        self.title(titulo)
+
         self.geometry("800x600+100+50")
         self._make_menu()
         
