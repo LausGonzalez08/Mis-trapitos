@@ -1,4 +1,5 @@
 import tkinter as tk
+import sys
 
 class MainView(tk.Toplevel):
     def __init__(self, username='', is_admin=False):
@@ -21,5 +22,5 @@ class MainView(tk.Toplevel):
         menu_opciones = tk.Menu(self.barra_menu, tearoff=0, bg="lightblue", fg="black")
         menu_opciones.add_command(label="Ajustes")
         menu_opciones.add_separator()
-        menu_opciones.add_command(label="Salir", command=self.quit)
+        menu_opciones.add_command(label="Salir", command=sys.exit)
         self.barra_menu.add_cascade(label="Opciones", menu=menu_opciones)
