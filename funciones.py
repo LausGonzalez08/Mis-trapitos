@@ -32,7 +32,8 @@ class AppController:
             messagebox.showerror("Error", "Las contraseñas no coinciden")
             return
             
-        success, message = self.model.add_user(nuevo_user, nueva_pass)
+        es_admin = self.register_view.tipo_usuario.get() == "admin"
+        success, message = self.model.add_user(nuevo_user, nueva_pass, admin=es_admin)
         if success:
             messagebox.showinfo("Éxito", message)
             self.register_view.destroy()

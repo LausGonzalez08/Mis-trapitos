@@ -52,7 +52,14 @@ class RegisterView(tk.Toplevel):
         tk.Label(self, text="Confirmar contraseña:").pack(pady=(10,0))
         self.entry_confirmar_contraseña = tk.Entry(self, show="*")
         self.entry_confirmar_contraseña.pack()
-        
+
+        # Selección del tipo de usuario
+        self.tipo_usuario = tk.StringVar(value="empleado")
+        frame_tipo = tk.Frame(self)
+        frame_tipo.pack(pady=5)
+        tk.Label(frame_tipo, text="Tipo de usuario:").pack(anchor="w")
+        tk.Radiobutton(frame_tipo, text="Administrador", variable=self.tipo_usuario, value="admin").pack(anchor="w")
+        tk.Radiobutton(frame_tipo, text="Empleado", variable=self.tipo_usuario, value="empleado").pack(anchor="w")
+
         btn_guardar = tk.Button(self, text="Registrar", command=self.controller.register_user)
         btn_guardar.pack(pady=10)
-

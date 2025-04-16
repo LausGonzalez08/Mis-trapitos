@@ -13,13 +13,14 @@ class UserModel:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 username TEXT PRIMARY KEY,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                admin BOOLEAN NOT NULL DEFAULT 0
             )
         ''')
         conn.commit()
         conn.close()
 
-    def add_user(self, username, password):
+    def add_user(self, username, password, admin=False):
         if not username or not password:
             return False, "Todos los campos son obligatorios"
         
@@ -28,7 +29,7 @@ class UserModel:
         
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        cursor.execute("INSERT INTO users (username, password, admin) VALUES (?, ?, ?)", (username, password, int(admin)))
         conn.commit()
         conn.close()
         return True, "Usuario registrado con éxito!"
