@@ -1,12 +1,15 @@
 from usuarios import UserModel
 from iniciointerfaz import MainView
 from logininterfaz import LoginView, RegisterView, messagebox
+import tkinter as tk
 class AppController:
     def __init__(self):
+        self.root = tk.Tk()  
         self.model = UserModel()
         self.main_view = None
         self.login_view = LoginView(None, self)
         self.register_view = None
+        self.root.withdraw() 
 
     def login(self):
         usuario = self.login_view.entry_usuario.get()

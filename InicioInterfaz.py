@@ -1,6 +1,6 @@
 import tkinter as tk
 
-class MainView(tk.Tk):
+class MainView(tk.Toplevel):
     def __init__(self, username='', is_admin=False):
         super().__init__()
         self.username = username
