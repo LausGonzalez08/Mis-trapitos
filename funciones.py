@@ -14,18 +14,16 @@ class AppController:
     def login(self):
         usuario = self.login_view.entry_usuario.get()
         contraseña = self.login_view.entry_contraseña.get()
-        print(usuario)
-        print(contraseña)
         if self.model.validate_credentials(usuario, contraseña):
             is_admin = self.model.is_admin(usuario)
-            self.main_view = MainView(username=usuario, is_admin=is_admin)
+            self.main_view = MainView(self.root, self, username=usuario, is_admin=is_admin)
             self.login_view.destroy()
             self.main_view.mainloop()
         else:
             messagebox.showerror("Error", "Credenciales incorrectas")
 
     def show_register(self):
-        self.register_view = RegisterView(self.login_view, self)
+        self.register_view = RegisterView(self.root, self)
 
     def register_user(self):
         nuevo_user = self.register_view.entry_nuevo_usuario.get()

@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 
+#Interfaz de Login principal
 class LoginView(tk.Toplevel):
     def __init__(self, master, controller):
         super().__init__(master)
@@ -29,15 +30,15 @@ class LoginView(tk.Toplevel):
         btn_login = tk.Button(marco_botones, text="Ingresar", command=self.controller.login)
         btn_login.grid(row=0, column=0, padx=5)
 
-        btn_registro = tk.Button(marco_botones, text="Registrar", command=self.controller.show_register)
-        btn_registro.grid(row=0, column=1, padx=5)
+        #btn_registro = tk.Button(marco_botones, text="Registrar", command=self.controller.show_register)
+        #btn_registro.grid(row=0, column=1, padx=5)
 
 class RegisterView(tk.Toplevel):
     def __init__(self, master, controller):
         super().__init__(master)
         self.controller = controller
         self.title("Registro")
-        self.geometry("300x200+400+300")
+        self.geometry("300x350+400+300")
         self._make_widgets()
         
     def _make_widgets(self):
