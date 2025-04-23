@@ -22,12 +22,13 @@ class MainView(tk.Toplevel):
         #Menu
         menu_opciones = tk.Menu(self.barra_menu, tearoff=0, bg="lightblue", fg="black")
         menu_opciones.add_command(label="Ajustes")
-        menu_opciones.add_separator()
-        menu_opciones.add_command(label="Salir", command=sys.exit)
         #Opciones solo para administrador
         if self.is_admin:
+            menu_opciones.add_separator()
             menu_opciones.add_command(
                 label="Agregar nuevo Usuario", 
                 command=self.controller.show_register  # <-- Acceso al controlador
             )
+        menu_opciones.add_separator()
+        menu_opciones.add_command(label="Salir", command=sys.exit)
         self.barra_menu.add_cascade(label="Opciones", menu=menu_opciones)#Agrega el boton "Opciones" a la barra de menu
