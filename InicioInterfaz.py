@@ -1,4 +1,3 @@
-
 import tkinter as tk
 import sys
 
@@ -26,8 +25,9 @@ class MainView(tk.Toplevel):
         menu_opciones.add_separator()
         menu_opciones.add_command(label="Salir", command=sys.exit)
         #Opciones solo para administrador
-        menu_opciones.add_command(
-                label="Agregar nuevo Usuario",
-                command=self.controller.show_register  # Ahora existe la referencia
+        if self.is_admin:
+            menu_opciones.add_command(
+                label="Agregar nuevo Usuario", 
+                command=self.controller.show_register  # <-- Acceso al controlador
             )
         self.barra_menu.add_cascade(label="Opciones", menu=menu_opciones)#Agrega el boton "Opciones" a la barra de menu
