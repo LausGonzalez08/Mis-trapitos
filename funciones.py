@@ -1,5 +1,5 @@
 from usuarios import UserModel
-from iniciointerfaz import MainView
+from InicioInterfaz import MainView
 from logininterfaz import LoginView, RegisterView, messagebox
 import tkinter as tk
 class AppController:
