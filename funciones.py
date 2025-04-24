@@ -41,6 +41,15 @@ class AppController:
             self.register_view.destroy()
         else:
             messagebox.showerror("Error", message)
+    
+    def logout(self):
+        # Cerrar ventana principal
+        if self.main_view:
+            self.main_view.destroy()
+            self.main_view = None
+        # Mostrar nueva ventana de login
+        self.login_view = LoginView(self.root, self)
+        self.login_view.deiconify()
 
     def run(self):
         self.main_view.mainloop()

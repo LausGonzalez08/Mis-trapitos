@@ -27,8 +27,9 @@ class MainView(tk.Toplevel):
             menu_opciones.add_separator()
             menu_opciones.add_command(
                 label="Agregar nuevo Usuario", 
-                command=self.controller.show_register  # <-- Acceso al controlador
+                command=self.controller.show_register  
             )
         menu_opciones.add_separator()
+        menu_opciones.add_command(label="Cerrar sesión", command=self.controller.logout)
         menu_opciones.add_command(label="Salir", command=sys.exit)
         self.barra_menu.add_cascade(label="Opciones", menu=menu_opciones)#Agrega el boton "Opciones" a la barra de menu
