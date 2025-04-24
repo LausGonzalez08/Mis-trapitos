@@ -1,7 +1,7 @@
 #INICIALIZADOR
 #----Bibliotecas----
 from funciones import AppController 
-"""se importa AppControler de funciones.py"""
+"""se importa AppControler (orquestador de modulos del programa) de funciones.py"""
 
 if __name__ == "__main__":#se crea un main algo como en C++
     app = AppController() #Se asigna AppController a app
