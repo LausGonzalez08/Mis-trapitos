@@ -12,18 +12,18 @@ class AppController:
         self.root = tk.Tk()  #Precarga Tkinter
         self.model = UserModel() #Obtiene UserModel
         self.main_view = None #Obtiene main_view
-        self.login_view = LoginView(None, self) #Obtiene LoginView de la interfaz de login
+        self.login_view = LoginView(self.root, self) #Obtiene LoginView de la interfaz de login
         self.register_view = None #Obtiene register_view
         self.root.withdraw() #Oculta la ventana
-    
+        self.login_view.entry_contraseña.bind("<Return>", self.login)# Enlazar evento <Return> al campo de contraseña
     #Funcion para Login
-    def login(self):
+    def login(self, event=None):
         usuario = self.login_view.entry_usuario.get() #Obtiene lo ingresado de la zona de texto de usuario en logininterfaz.py
         contraseña = self.login_view.entry_contraseña.get() #Obtiene lo ingresado de la zona de texto de contraseña en logininterfaz.py
         if self.model.validate_credentials(usuario, contraseña): #Envia lo ingresado a validate_credentials
             is_admin = self.model.is_admin(usuario) #Envia el usuario ingresado a is_admin
-            self.main_view = MainView(self.root, self, username=usuario, is_admin=is_admin) #Obtiene los datos
             self.login_view.destroy()#Cierra la ventana de login
+            self.main_view = MainView(self.root, self, username=usuario, is_admin=is_admin) #Obtiene los datos
             self.main_view.mainloop()#Mantiene la interfaz abierta
         else:
             messagebox.showerror("Error", "Credenciales incorrectas") #Validador si los datos son incorrectos
@@ -56,8 +56,10 @@ class AppController:
         if self.main_view: #Si esta en InicioInterfaz.py
             self.main_view.destroy() #Destruye la ventana principal
             self.main_view = None
+        
         # Mostrar nueva ventana de login
         self.login_view = LoginView(self.root, self) #Vuelve a llamar LoginView de logininterfaz.py
+        self.login_view.entry_contraseña.bind("<Return>", self.login) #Funcion para leer la tecla ingresada
         self.login_view.deiconify()#Muestra la ventana Oculta
     
     #----Funcion que ejecuta y muestra el programa-----
