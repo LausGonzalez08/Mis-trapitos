@@ -19,7 +19,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             titulo += " (Administrador)" #Si es administrador agregar "administrador" al titulo.
         self.title(titulo)#Inserta titulo en la parte de arriba en la interfaz
 
-        self.geometry("800x600+100+50")#Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
+        self.attributes('-fullscreen', True)#Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
         self._make_menu()#ejecuta menu
         
     

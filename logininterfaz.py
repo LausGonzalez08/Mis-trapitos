@@ -2,6 +2,7 @@
 #----Bibliotecas----
 import tkinter as tk
 from tkinter import messagebox
+import sys
 
 #----INTERFAZ DE LOGIN----
 class LoginView(tk.Toplevel):
@@ -9,20 +10,29 @@ class LoginView(tk.Toplevel):
         super().__init__(master)
         self.controller = controller #Hace propio controller para poder usarlo
         self.title("Login") #Titulo de la ventana
-        self.geometry("300x250+400+300") #Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
+        self.attributes('-fullscreen', True) #Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
         self._make_widgets() #Llama a la funcion make_widgets
         
     #----WIDGET----
     def _make_widgets(self): #funcion para crealo que va dentro de la venta principal
+        try:
+            self.logo_image = tk.PhotoImage(file="usuario.png")
+            logo_label = tk.Label(self, image=self.logo_image)
+            logo_label.pack(pady=10)
+        except:
+            # Si hay error al cargar la imagen, mostramos un mensaje o simplemente continuamos
+            print("No se pudo cargar la imagen del logo")
+            pass
+        
         self.marco_login = tk.Frame(self) #Agrega el elemento Frame de tkinter a marco_login
-        self.marco_login.pack(pady=20) #
+        self.marco_login.pack(pady=10) #
 
         # Campos de usuario y contraseña
-        tk.Label(self.marco_login, text="Usuario:").grid(row=0, column=0, sticky="e", pady=5)#Zona de texto Usuario
+        tk.Label(self.marco_login, text="Usuario:").grid(row=0, column=0, sticky="e", pady=0)#Zona de texto Usuario
         self.entry_usuario = tk.Entry(self.marco_login) #Zona de entrada de texto
         self.entry_usuario.grid(row=0, column=1) #Tamaño
 
-        tk.Label(self.marco_login, text="Contraseña:").grid(row=1, column=0, sticky="e", pady=5) #Zona de texto Contraseña
+        tk.Label(self.marco_login, text="Contraseña:").grid(row=1, column=0, sticky="e", pady=0) #Zona de texto Contraseña
         self.entry_contraseña = tk.Entry(self.marco_login, show="*") #Zona de entrada de texto y pone * por caracter ingresado
         self.entry_contraseña.grid(row=1, column=1)#Tamaño
 
@@ -31,7 +41,9 @@ class LoginView(tk.Toplevel):
         marco_botones.pack(pady=10)#Tamaño
 
         btn_login = tk.Button(marco_botones, text="Ingresar", command=self.controller.login) #Boton para iniciar sesion
-        btn_login.grid(row=0, column=0, padx=5)#Tamaño de boton
+        btn_login.grid(row=0, column=0, padx=0)#Tamaño de boton
+        btn_login = tk.Button(marco_botones, text="Salir", command=sys.exit) #Boton para Salir
+        btn_login.grid(row=0, column=1, padx=10)
 
 
 #----Interfaz de Restro de nuevo usuario----
