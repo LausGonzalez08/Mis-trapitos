@@ -15,10 +15,13 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.username = username #Recibe username(Nombre de Usuario) y lo hace un atributo propio 
         self.is_admin = is_admin #Recibe is_admin y lo hace un atributo propio, en este caso (1 o 0) 
 
-        titulo = f"Inicio - {self.username}" #Crea un atributo titulo que en este caso llevara la palabra Inicio + lo que haya en username
+        titulo = f"Mis Trapitos - Inicio - {self.username}" #Crea un atributo titulo que en este caso llevara la palabra Inicio + lo que haya en username
         if self.is_admin:#validador de usuario tipo administrador, si is_admin es true entra al if.
-            titulo += " (Administrador)" #Si es administrador agregar "administrador" al titulo.
+            titulo += "Administrador" #Si es administrador agregar "administrador" al titulo.
         self.title(titulo)#Inserta titulo en la parte de arriba en la interfaz
+        #icono
+        icono = tk.PhotoImage(file="icono.png")
+        self.tk.call("wm", "iconphoto", self._w, icono)
 
         self.state('zoomed')#Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
         self._make_menu()# Crea el menú superior

@@ -9,7 +9,10 @@ class LoginView(tk.Toplevel):
     def __init__(self, master, controller):
         super().__init__(master)
         self.controller = controller
-        self.title("Login")
+        self.title("Mis trapitos - Login")
+        #icono
+        icono = tk.PhotoImage(file="icono.png")
+        self.tk.call("wm", "iconphoto", self._w, icono)
         self.state('zoomed')
         self._make_widgets()
         
@@ -53,8 +56,11 @@ class RegisterView(tk.Toplevel):
     def __init__(self, master, controller):#Recibe master y controller
         super().__init__(master)
         self.controller = controller #Hace propio controller
-        self.title("Registro") #Titulo de la ventana
+        self.title("Mis Trapitos - Registro") #Titulo de la ventana
         self.geometry("300x350+400+300") #Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
+        #icono
+        icono = tk.PhotoImage(file="nuevo.png")
+        self.tk.call("wm", "iconphoto", self._w, icono)
         self._make_widgets() #Crea el widget
         
     def _make_widgets(self): #Funcion para crear lo que va dentro de la ventana
