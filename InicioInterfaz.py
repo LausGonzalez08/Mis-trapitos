@@ -22,7 +22,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         #icono
         icono = tk.PhotoImage(file="icono.png")
         self.tk.call("wm", "iconphoto", self._w, icono)
-
+        self.resizable(False, False)
         self.state('zoomed')#Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
         self._make_menu()# Crea el menú superior
         self._make_buttons()  # Crea los botones en la parte inferior
@@ -52,9 +52,11 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
     
     def _make_buttons(self):
         # Botón en posición exacta (x=100, y=400)
-        btn1 = tk.Button(self, text="Posición exacta", width=15)
-        btn1.place(x=100, y=400)
+        btn1 = tk.Button(self, text="Generar venta", width=40)
+        btn1.place(x=20, y=520)
         
-        # Botón relativo al tamaño de la ventana
-        btn2 = tk.Button(self, text="Relativo", width=15)
-        btn2.place(relx=0.5, rely=0.9, anchor='center')  # 50% ancho, 90% alto
+        btn1 = tk.Button(self, text="Capturar Inventario", width=40)
+        btn1.place(x=20, y=560)
+        
+        btn1 = tk.Button(self, text="Consultar Clientes", width=40)
+        btn1.place(x=20, y=600)
