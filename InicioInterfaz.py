@@ -51,7 +51,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.config(menu=self.barra_menu) #Agrega la barra de menu a menu y menu a config
         #Menu
         menu_opciones = tk.Menu(self.barra_menu, tearoff=0, bg="lightblue", fg="black") #Se aagrega un submenu que se desplega en barra_menu y su configuracion visual.
-        menu_opciones.add_command(label="Ajustes", command= SettingView) #añade un boton al submenu con la opcion de ajustes, por el momento no hace nada.
+        menu_opciones.add_command(label="Ajustes",  command=lambda: self.controller.show_settings(self.username)) #añade un boton al submenu con la opcion de ajustes, por el momento no hace nada.
         #Opciones solo para administrador
         if self.is_admin: #validador si is_admin es true mostrara lo siguiente en el menu
             menu_opciones.add_separator() #Añade un separador en el submenu

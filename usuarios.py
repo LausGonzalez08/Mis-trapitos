@@ -18,7 +18,9 @@ class UserModel:
             CREATE TABLE IF NOT EXISTS users (
                 username TEXT PRIMARY KEY,
                 password TEXT NOT NULL,
-                admin BOOLEAN NOT NULL DEFAULT 0
+                admin BOOLEAN NOT NULL DEFAULT 0,
+                address TEXT NOT NULL,
+                number TEXTE NOT NULL
             )
         ''') #Busca o crea la Tabla en la base de datos
         conn.commit()#Guarda los cambios
@@ -65,3 +67,22 @@ class UserModel:
         row = cursor.fetchone() #Guarda los datos obtenidos en la base de datos
         conn.close()#Cierra la conexion con la base de datos
         return bool(row[0]) if row else False #Retorna True si row tiene datos, si row es None retorna False.
+    
+    def get_user_info(self, username):
+        """Obtiene toda la información del usuario"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user_info = cursor.fetchone()
+        conn.close()
+        return user_info
+    
+    def update_user_info(self, username, address, number):
+        """Actualiza la dirección y teléfono del usuario"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET address = ?, number = ? WHERE username = ?", 
+                      (address, number, username))
+        conn.commit()
+        conn.close()
+        return True

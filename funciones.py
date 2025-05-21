@@ -4,6 +4,7 @@
 from usuarios import UserModel #Obtiene la funcion UserModel de usuarios.py
 from InicioInterfaz import MainView #Obtiene la funcion MainView de InicioInterfaz.py
 from logininterfaz import LoginView, RegisterView, messagebox #Obtiene las funciones LoginView, RegisterView y messagebox de logininterfaz.py
+from ajustesinterfaz import SettingView 
 import tkinter as tk #Importa Tkinter
 
 #----Main-----
@@ -18,15 +19,39 @@ class AppController:
         self.login_view.entry_contraseña.bind("<Return>", self.login)# Enlazar evento <Return> al campo de contraseña
     #Funcion para Login
     def login(self, event=None):
-        usuario = self.login_view.entry_usuario.get() #Obtiene lo ingresado de la zona de texto de usuario en logininterfaz.py
-        contraseña = self.login_view.entry_contraseña.get() #Obtiene lo ingresado de la zona de texto de contraseña en logininterfaz.py
-        if self.model.validate_credentials(usuario, contraseña): #Envia lo ingresado a validate_credentials
-            is_admin = self.model.is_admin(usuario) #Envia el usuario ingresado a is_admin
-            self.login_view.destroy()#Cierra la ventana de login
-            self.main_view = MainView(self.root, self, username=usuario, is_admin=is_admin) #Obtiene los datos
-            self.main_view.mainloop()#Mantiene la interfaz abierta
+        usuario = self.login_view.entry_usuario.get()
+        contraseña = self.login_view.entry_contraseña.get()
+        
+        if self.model.validate_credentials(usuario, contraseña):
+            is_admin = self.model.is_admin(usuario)
+            user_info = self.model.get_user_info(usuario)
+            
+            # Verificar si tiene dirección y teléfono
+            if not user_info[3] or not user_info[4]:  # address y number
+                self.login_view.destroy()
+                messagebox.showwarning("Información requerida", 
+                                      "Debe completar su información personal antes de continuar")
+                self.show_settings(usuario, first_login=True)
+            else:
+                self.open_main_view(usuario, is_admin)
         else:
-            messagebox.showerror("Error", "Credenciales incorrectas") #Validador si los datos son incorrectos
+            messagebox.showerror("Error", "Credenciales incorrectas")
+    
+    def show_settings(self, username, first_login=False):
+        self.settings_view = SettingView(self.root, self, username, first_login)
+    
+    def open_main_after_settings(self):
+        """Método llamado después de guardar la configuración en primer login"""
+        # Obtener el usuario actual (podríamos guardarlo en una variable de instancia)
+        user_info = self.model.get_user_info(self.settings_view.username)
+        if user_info[3] and user_info[4]:  # Si ya tiene address y number
+            self.open_main_view(self.settings_view.username, 
+                              self.model.is_admin(self.settings_view.username))
+    
+    def open_main_view(self, username, is_admin):
+        """Abre la vista principal"""
+        self.main_view = MainView(self.root, self, username=username, is_admin=is_admin)
+        self.main_view.mainloop()
     
     #----Funcion para mostrar la interfaz de registro----
     def show_register(self):
