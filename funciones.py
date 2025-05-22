@@ -94,3 +94,4 @@ class AppController:
     def run(self):
         self.main_view.mainloop()
 
+
