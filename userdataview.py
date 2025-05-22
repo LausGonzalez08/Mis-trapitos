@@ -58,3 +58,4 @@ class UserDataView(tk.Toplevel):
         if nueva:
             self.controller.model.update_password(username, nueva)
             messagebox.showinfo("Actualizado", "Contraseña actualizada correctamente.")
+

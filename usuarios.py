@@ -218,3 +218,4 @@ class UserModel:
         else:
             conn.close()
             return "no_encontrado"
+        

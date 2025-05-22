@@ -274,3 +274,4 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         tk.Label(self.content_frame, text="Consultar Clientes", 
                 font=('Arial', 18), bg='white').pack(pady=20)
         
+        

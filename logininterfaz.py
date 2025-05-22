@@ -96,3 +96,4 @@ padx = Tamaño en X
 pack = agrega lo de la funcion en la ventana principal
 Entry = Zona para ingresar texto.
         """
+

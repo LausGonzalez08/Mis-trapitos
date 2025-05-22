@@ -57,3 +57,4 @@ class SettingView(tk.Toplevel):
             self.controller.show_main_view(self.username)
         else:
             messagebox.showerror("Error", "No se pudo actualizar la información")
+            
