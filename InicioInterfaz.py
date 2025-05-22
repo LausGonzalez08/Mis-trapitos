@@ -3,6 +3,7 @@
 import tkinter as tk #Tkinter que es la libreria para la interfaz, que se importa como tk =Tkinter
 import sys #Importamos Sys 
 from ajustesinterfaz import SettingView
+from tkinter import messagebox
 
 #----Clase para Interfaz de inicio----
 class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la principal
@@ -32,7 +33,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.main_frame.pack(fill=tk.BOTH, expand=True)
         
         # Frame para los botones (lado izquierdo)
-        self.button_frame = tk.Frame(self.main_frame, width=200, bg='lightgray')
+        self.button_frame = tk.Frame(self.main_frame, width=400, bg='lightgray')
         self.button_frame.pack(side=tk.LEFT, fill=tk.Y)
         
         # Frame para el contenido dinámico (lado derecho)
@@ -78,6 +79,9 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
                                     command=self.show_inventario_content)
             btn_inventario.pack(pady=10, padx=10, fill=tk.X)
             
+            btn_baja = tk.Button(self.button_frame, text="Baja de Producto", width=20, command=self.baja_producto_popup)
+            btn_baja.pack(pady=10, padx=10, fill=tk.X)
+        
             btn_clientes = tk.Button(self.button_frame, text="Consultar Clientes", width=20,
                                 command=self.show_clientes_content)
             btn_clientes.pack(pady=10, padx=10, fill=tk.X)
@@ -98,33 +102,33 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
 
         # Frame principal dividido en dos
         izquierda_frame = tk.Frame(self.content_frame, bg='#f7f7f7')
-        izquierda_frame.pack(side='left', fill='both',  expand=True, padx=20, pady=20)
+        izquierda_frame.pack(side='left', fill='both', expand=True, padx=20, pady=20)
 
         derecha_frame = tk.Frame(self.content_frame, bg='#f7f7f7', relief='sunken', borderwidth=1)
         derecha_frame.pack(side='right', fill='both', expand=True, padx=20, pady=20)
 
         # --- Izquierda: ingreso de datos ---
-        tk.Label(izquierda_frame, text="Nueva Venta", font=('Arial', 18), bg='white').pack(pady=10)
+        tk.Label(izquierda_frame, text="Nueva Venta", font=('Arial', 18), bg='#f7f7f7').pack(pady=10)
 
-        tk.Label(izquierda_frame, text="ID de Producto:", bg='white').pack()
-        id_frame = tk.Frame(izquierda_frame, bg='white')
+        tk.Label(izquierda_frame, text="ID de Producto:", bg='#f7f7f7').pack()
+        id_frame = tk.Frame(izquierda_frame, bg='#f7f7f7')
         id_frame.pack(pady=5)
         entry_id = tk.Entry(id_frame, width=30)
         entry_id.pack(side='left')
         btn_buscar = tk.Button(id_frame, text="🔍", width=2, command=self.buscar_producto_por_nombre)
         btn_buscar.pack(side='left', padx=5)
 
-        tk.Label(izquierda_frame, text="Cantidad:", bg='white').pack()
-
+        tk.Label(izquierda_frame, text="Cantidad:", bg='#f7f7f7').pack()
         cantidad_spinbox = tk.Spinbox(izquierda_frame, from_=1, to=100, width=30)
         cantidad_spinbox.pack(pady=5)
 
-        tk.Label(izquierda_frame, text="Cliente:", bg='white').pack()
+        tk.Label(izquierda_frame, text="Cliente:", bg='#f7f7f7').pack()
         tk.Entry(izquierda_frame, width=33).pack(pady=5)
 
-        # 👇 Estos botones ahora sí se mostrarán correctamente
+        # 👇 Botones
         btn_agregar = tk.Button(izquierda_frame, text="Agregar Producto", command=self.agregar_producto)
         btn_agregar.pack(pady=5)
+
 
         btn_registrar = tk.Button(izquierda_frame, text="Registrar Venta", command=self.registrar_venta)
         btn_registrar.pack(pady=5)
@@ -134,6 +138,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
 
         self.resumen_listbox = tk.Listbox(derecha_frame, width=100, height=50)
         self.resumen_listbox.pack(padx=10, pady=10)
+
 
 
 #---------------------------FUNCIONES DE PRUEBA----------------------------------------------
@@ -150,10 +155,119 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         print("Se registro una venta.")
     
     def show_inventario_content(self):
-        """Muestra el contenido para capturar inventario"""
         self.clear_content_frame()
-        tk.Label(self.content_frame, text="Capturar Inventario", 
-                font=('Arial', 18), bg='white').pack(pady=20)
+
+        izquierda = tk.Frame(self.content_frame, bg='#f7f7f7')
+        izquierda.pack(side='left', fill='both', expand=True, padx=20, pady=20)
+
+        derecha = tk.Frame(self.content_frame, bg='#f7f7f7', relief='sunken', borderwidth=1)
+        derecha.pack(side='right', fill='both', expand=True, padx=20, pady=20)
+
+        tk.Label(izquierda, text="Capturar Producto", font=('Arial', 18), bg='white').pack(pady=10)
+
+        campos = [
+            ("ID:", "id"),
+            ("Nombre del producto:", "nombre"),
+            ("Cantidad en stock:", "cantidad"),
+            ("Proveedor:", "proveedor"),
+            ("Tipo de prenda:", "tipo"),
+            ("Talla (P, M, G o número):", "talla"),
+            ("Para (Hombre, Mujer, Niño, Niña):", "persona")
+        ]
+        self.entries_inventario = {}
+        for label_text, key in campos:
+            tk.Label(izquierda, text=label_text, bg='white').pack()
+            entry = tk.Entry(izquierda, width=40)
+            entry.pack(pady=5)
+            self.entries_inventario[key] = entry
+
+        # Botones
+        btn_guardar = tk.Button(izquierda, text="Guardar", command=self.guardar_producto)
+        btn_guardar.pack(pady=5)
+        btn_limpiar = tk.Button(izquierda, text="Limpiar", command=self.limpiar_entradas_inventario)
+        btn_limpiar.pack(pady=5)
+
+        # Lista a la derecha
+        tk.Label(derecha, text="Resumen de Inventario", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
+        self.resumen_inventario = tk.Listbox(derecha, width=100, height=50)
+        self.resumen_inventario.pack(padx=10, pady=10)
+
+        self.cargar_resumen_inventario()
+    
+    def guardar_producto(self):
+        datos = {k: v.get().strip() for k, v in self.entries_inventario.items()}
+        if not all(datos.values()):
+            messagebox.showerror("Error", "Todos los campos son obligatorios")
+            return
+
+        if not datos["cantidad"].isdigit():
+            messagebox.showerror("Error", "La cantidad debe ser un número")
+            return
+
+        exito = self.controller.model.agregar_producto(
+            datos["id"], datos["nombre"], int(datos["cantidad"]), 
+            datos["proveedor"], datos["tipo"], datos["talla"], datos["persona"]
+        )
+
+        if exito:
+            messagebox.showinfo("Éxito", "Producto agregado correctamente")
+            self.limpiar_entradas_inventario()
+            self.cargar_resumen_inventario()
+        else:
+            messagebox.showerror("Error", "Ya existe un producto con ese ID")
+
+    def baja_producto_popup(self):
+        popup = tk.Toplevel(self)
+        popup.title("Baja de Producto")
+        popup.geometry("300x200")
+        popup.resizable(False, False)
+
+        tk.Label(popup, text="ID del producto:").pack(pady=5)
+        entry_id = tk.Entry(popup)
+        entry_id.pack(pady=5)
+
+        tk.Label(popup, text="Cantidad a dar de baja:").pack(pady=5)
+        entry_cantidad = tk.Entry(popup)
+        entry_cantidad.pack(pady=5)
+
+        def confirmar_baja():
+            id_producto = entry_id.get().strip()
+            cantidad = entry_cantidad.get().strip()
+
+            if not id_producto or not cantidad.isdigit():
+                messagebox.showerror("Error", "ID y cantidad válidos son requeridos")
+                return
+
+            cantidad = int(cantidad)
+            resultado = self.controller.model.disminuir_cantidad_producto(id_producto, cantidad)
+
+            if resultado == "parcial":
+                messagebox.showinfo("Actualizado", "Cantidad actualizada correctamente.")
+            elif resultado == "total":
+                messagebox.showinfo("Eliminado", "Producto eliminado del inventario.")
+            elif resultado == "excede":
+                messagebox.showerror("Error", "La cantidad ingresada excede el stock.")
+            elif resultado == "no_encontrado":
+                messagebox.showerror("Error", "Producto no encontrado.")
+
+            popup.destroy()
+            self.cargar_resumen_inventario()
+
+        tk.Button(popup, text="Confirmar", command=confirmar_baja).pack(pady=10)
+
+    def limpiar_entradas_inventario(self):
+        for entry in self.entries_inventario.values():
+            entry.delete(0, tk.END)
+
+    def cargar_resumen_inventario(self):
+        self.resumen_inventario.delete(0, tk.END)
+        datos = self.controller.model.obtener_inventario()
+        for row in datos:
+            self.resumen_inventario.insert(
+                tk.END,
+                f"{row[0]} | {row[1]} | Stock: {row[2]} | {row[3]} | Tipo: {row[4]} | Talla: {row[5]} | Para: {row[6]}"
+            )
+
     def show_clientes_content(self):
         """Muestra el contenido para consultar clientes"""
         self.clear_content_frame()

@@ -11,7 +11,7 @@ class UserModel:
         self._ensure_db() #LLama al ensure_db
         self.historial_db = 'LoginHistorial.db'
         self._ensure_historial_db()
-    
+        self._ensure_inventario_db()
     #----Funcion para la base de datos----
     def _ensure_historial_db(self):
         """Crea la base de datos de historial de logins si no existe"""
@@ -150,3 +150,71 @@ class UserModel:
         row = cursor.fetchone() #Guarda los datos obtenidos en la base de datos
         conn.close()#Cierra la conexion con la base de datos
         return bool(row[0]) if row else False #Retorna True si row tiene datos, si row es None retorna False.
+    
+    def _ensure_inventario_db(self):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS inventario (
+                id TEXT PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                cantidad INTEGER NOT NULL,
+                proveedor TEXT,
+                tipo TEXT,
+                talla TEXT,
+                persona TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    def agregar_producto(self, id, nombre, cantidad, proveedor, tipo, talla, persona):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO inventario (id, nombre, cantidad, proveedor, tipo, talla, persona) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (id, nombre, cantidad, proveedor, tipo, talla, persona)
+            )
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False
+        finally:
+            conn.close()
+
+    def obtener_inventario(self):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM inventario")
+        datos = cursor.fetchall()
+        conn.close()
+        return datos
+    
+    def disminuir_cantidad_producto(self, id_producto, cantidad):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT cantidad FROM inventario WHERE id = ?", (id_producto,))
+        resultado = cursor.fetchone()
+
+        if resultado:
+            cantidad_actual = resultado[0]
+            nueva_cantidad = cantidad_actual - cantidad
+
+            if nueva_cantidad > 0:
+                cursor.execute("UPDATE inventario SET cantidad = ? WHERE id = ?", (nueva_cantidad, id_producto))
+                conn.commit()
+                conn.close()
+                return "parcial"
+            elif nueva_cantidad == 0:
+                cursor.execute("DELETE FROM inventario WHERE id = ?", (id_producto,))
+                conn.commit()
+                conn.close()
+                return "total"
+            else:
+                conn.close()
+                return "excede"
+        else:
+            conn.close()
+            return "no_encontrado"
