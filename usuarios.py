@@ -2,42 +2,127 @@
 #----Bibliotecas----
 import sqlite3 #Libreria de la base de datos
 import os
+from datetime import datetime
 
 #----Clase para la administracion de usuarios----
 class UserModel: 
     def __init__(self, db_name='Mis_Trapitos.db'): #Carga la base de datos 
         self.db_name = db_name #Hace propio la base de datos
         self._ensure_db() #LLama al ensure_db
+        self.historial_db = 'LoginHistorial.db'
+        self._ensure_historial_db()
     
     #----Funcion para la base de datos----
+    def _ensure_historial_db(self):
+        """Crea la base de datos de historial de logins si no existe"""
+        conn = sqlite3.connect(self.historial_db)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS logins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                fecha_hora TEXT NOT NULL
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    def registrar_login(self, username):
+        """Registra un login exitoso en la base de datos de historial"""
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn = sqlite3.connect(self.historial_db)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO logins (username, fecha_hora) VALUES (?, ?)", (username, now))
+        conn.commit()
+        conn.close()
+
     def _ensure_db(self):
-        """Verifica si la base de datos existe, si no, la crea con la tabla de usuarios"""
-        conn = sqlite3.connect(self.db_name) #Conecta con la base de datos
-        cursor = conn.cursor() #Crea el puntero para obtener datos de la base de datos
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 username TEXT PRIMARY KEY,
                 password TEXT NOT NULL,
-                admin BOOLEAN NOT NULL DEFAULT 0
+                admin BOOLEAN NOT NULL DEFAULT 0,
+                address TEXT,
+                number TEXT
             )
-        ''') #Busca o crea la Tabla en la base de datos
-        conn.commit()#Guarda los cambios
-        conn.close()# Cierra la conexión
+        ''')
+        # Verificar si las columnas nuevas existen y agregarlas si no
+        cursor.execute("PRAGMA table_info(users)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'address' not in columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN address TEXT")
+        
+        if 'number' not in columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN number TEXT")
+        conn.commit()
+        conn.close()
     
-    #----Funcion para añadir usuarios----
-    def add_user(self, username, password, admin=False): #Recibe username, password, admin
-        if not username or not password:#Validacion para comprobar que todos los campos hayan sido llenados
+    def add_user(self, username, password, admin=False):
+        if not username or not password:
             return False, "Todos los campos son obligatorios"
         
-        if self._user_exists(username): #Validacion para avisar que un usuario ya existe
+        if self._user_exists(username):
             return False, "El usuario ya existe"
         
-        conn = sqlite3.connect(self.db_name) #Conectar con la base de datos
-        cursor = conn.cursor()  #Crea el puntero para obtener datos de la base de datos
-        cursor.execute("INSERT INTO users (username, password, admin) VALUES (?, ?, ?)", (username, password, int(admin))) #Inserta los datos
-        conn.commit()#Guarda los cambios
-        conn.close()#Cierra la conexion con la base de datos
-        return True, "Usuario registrado con éxito!" #Si se registro bien, retorna
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (username, password, admin) VALUES (?, ?, ?)", 
+                     (username, password, int(admin)))
+        conn.commit()
+        conn.close()
+        return True, "Usuario registrado con éxito!"
+    
+    def get_all_users(self):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT username FROM users")
+        users = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        return users
+
+    def delete_user(self, username):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+        conn.commit()
+        conn.close()
+
+    def update_password(self, username, new_password):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET password = ? WHERE username = ?", (new_password, username))
+        conn.commit()
+        conn.close()
+
+    def get_login_historial(self):
+        conn = sqlite3.connect(self.historial_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT username, fecha_hora FROM logins ORDER BY fecha_hora DESC")
+        data = cursor.fetchall()
+        conn.close()
+        return data
+
+    def get_user_info(self, username):
+        """Obtiene toda la información del usuario"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user_info = cursor.fetchone()
+        conn.close()
+        return user_info
+    
+    def update_user_info(self, username, address, number):
+        """Actualiza la dirección y teléfono del usuario"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET address = ?, number = ? WHERE username = ?", 
+                      (address, number, username))
+        conn.commit()
+        conn.close()
+        return True
     
     #----Funcion para verificar que un usuario ya existe en la BD
     def _user_exists(self, username):#Recibe Username
