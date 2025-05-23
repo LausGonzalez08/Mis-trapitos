@@ -12,6 +12,7 @@ class UserModel:
         self.historial_db = 'LoginHistorial.db'
         self._ensure_historial_db()
         self._ensure_inventario_db()
+        self._ensure_clientes_db()
     #----Funcion para la base de datos----
     def _ensure_historial_db(self):
         """Crea la base de datos de historial de logins si no existe"""
@@ -250,7 +251,7 @@ class UserModel:
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO cliente (id, nombre, direccion, telefono, correo) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO clientes (id, nombre, direccion, telefono, correo) VALUES (?, ?, ?, ?, ?)",
                 (id, nombre, direccion, telefono, correo)
             )
             conn.commit()
