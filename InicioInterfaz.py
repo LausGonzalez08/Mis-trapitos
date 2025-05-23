@@ -3,7 +3,7 @@
 import tkinter as tk #Tkinter que es la libreria para la interfaz, que se importa como tk =Tkinter
 import sys #Importamos Sys 
 from ajustesinterfaz import SettingView
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 
 #----Clase para Interfaz de inicio----
 class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la principal
@@ -25,7 +25,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.tk.call("wm", "iconphoto", self._w, icono)
         self.resizable(True, True)
         self.state('normal')#Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
-        #self._make_menu()# Crea el menú superior
+        #self._make_menu()# Crea el menú superiorF
         #self._make_buttons()  # Crea los botones en la parte inferior
         
         # Frame principal para organizar la interfaz
@@ -103,46 +103,85 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
     
     def show_venta_content(self):
         self.clear_content_frame()
+        self.productos_venta = []  # Lista para almacenar productos de la venta
 
-        # Frame principal dividido en dos
-        izquierda_frame = tk.Frame(self.content_frame, bg='#f7f7f7')
-        izquierda_frame.pack(side='left', fill='both', expand=True, padx=20, pady=20)
+        # Frame principal
+        main_frame = tk.Frame(self.content_frame, bg='#f7f7f7')
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        derecha_frame = tk.Frame(self.content_frame, bg='#f7f7f7', relief='sunken', borderwidth=1)
-        derecha_frame.pack(side='right', fill='both', expand=True, padx=20, pady=20)
+        # Frame izquierdo (formulario)
+        left_frame = tk.Frame(main_frame, bg='#f7f7f7')
+        left_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-        # --- Izquierda: ingreso de datos ---
-        tk.Label(izquierda_frame, text="Nueva Venta", font=('Arial', 18), bg='#f7f7f7').pack(pady=10)
+        # Frame derecho (resumen)
+        right_frame = tk.Frame(main_frame, bg='#f7f7f7')
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        tk.Label(izquierda_frame, text="ID de Producto:", bg='#f7f7f7').pack()
-        id_frame = tk.Frame(izquierda_frame, bg='#f7f7f7')
+        # --- Formulario de venta ---
+        tk.Label(left_frame, text="Nueva Venta", font=('Arial', 18), bg='#f7f7f7').pack(pady=10)
+
+        # Campo ID Producto
+        tk.Label(left_frame, text="ID de Producto:", bg='#f7f7f7').pack()
+        id_frame = tk.Frame(left_frame, bg='#f7f7f7')
         id_frame.pack(pady=5)
         self.entry_id = tk.Entry(id_frame, width=30)
-        self.entry_id.pack(side='left')
+        self.entry_id.pack(side=tk.LEFT)
         btn_buscar = tk.Button(id_frame, text="🔍", width=2, command=self.buscar_producto_por_nombre)
-        btn_buscar.pack(side='left', padx=5)
+        btn_buscar.pack(side=tk.LEFT, padx=5)
 
-        tk.Label(izquierda_frame, text="Cantidad:", bg='#f7f7f7').pack()
-        cantidad_spinbox = tk.Spinbox(izquierda_frame, from_=1, to=100, width=30)
-        cantidad_spinbox.pack(pady=5)
+        # Campo Cantidad
+        tk.Label(left_frame, text="Cantidad:", bg='#f7f7f7').pack()
+        self.cantidad_spinbox = tk.Spinbox(left_frame, from_=1, to=100, width=30)
+        self.cantidad_spinbox.pack(pady=5)
 
-        tk.Label(izquierda_frame, text="Cliente:", bg='#f7f7f7').pack()
-        tk.Entry(izquierda_frame, width=33).pack(pady=5)
+        # Campo Cliente
+        tk.Label(left_frame, text="Cliente:", bg='#f7f7f7').pack()
+        clientes = [f"{cliente[1]} (ID: {cliente[0]})" for cliente in self.controller.model.obtener_clientes()]
+        self.combo_cliente = ttk.Combobox(left_frame, width=30, values=clientes)
+        self.combo_cliente.pack(pady=5)
 
-        # 👇 Botones
-        btn_agregar = tk.Button(izquierda_frame, text="Agregar Producto")
-        btn_agregar.pack(pady=5)
+        # Botones
+        btn_frame = tk.Frame(left_frame, bg='#f7f7f7')
+        btn_frame.pack(pady=10)
+        tk.Button(btn_frame, text="Agregar Producto", command=self.agregar_producto_venta).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text="Registrar Venta", command=self.registrar_venta).pack(side=tk.LEFT, padx=5)
 
+        # --- Resumen de venta ---
+        tk.Label(right_frame, text="Resumen de Venta", font=('Arial', 16), bg='#f7f7f7').pack()
 
-        btn_registrar = tk.Button(izquierda_frame, text="Registrar Venta", command=self.registrar_venta)
-        btn_registrar.pack(pady=5)
+        # Frame para el listbox y scrollbar
+        list_frame = tk.Frame(right_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True)
 
-        # --- Derecha: resumen de productos ---
-        tk.Label(derecha_frame, text="Resumen de Venta", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
+        # Scrollbar
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.resumen_inventario = tk.Listbox(derecha_frame, width=100, height=50)
-        self.resumen_inventario.pack(padx=10, pady=10)
+        # Listbox
+        self.resumen_listbox = tk.Listbox(
+            list_frame, 
+            width=80, 
+            height=20,
+            yscrollcommand=scrollbar.set
+        )
+        self.resumen_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.resumen_listbox.yview)
 
+        # Frame para botones de eliminar
+        self.buttons_frame = tk.Frame(right_frame)
+        self.buttons_frame.pack(fill=tk.X)
+
+        # Total
+        total_frame = tk.Frame(right_frame, bg='#f7f7f7')
+        total_frame.pack(fill=tk.X, pady=5)
+        tk.Label(total_frame, text="Total:", font=('Arial', 12, 'bold'), bg='#f7f7f7').pack(side=tk.LEFT)
+        self.lbl_total = tk.Label(total_frame, text="$0.00", font=('Arial', 12, 'bold'), bg='#f7f7f7')
+        self.lbl_total.pack(side=tk.LEFT, padx=10)
+
+    def actualizar_lista_clientes(self, combobox):
+        """Actualiza la lista de clientes en el Combobox"""
+        clientes = [f"{cliente[1]} (ID: {cliente[0]})" for cliente in self.controller.model.obtener_clientes()]
+        combobox['values'] = clientes
 
 
 #---------------------------FUNCIONES DE PRUEBA----------------------------------------------
@@ -210,9 +249,163 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         busqueda_window.grab_set()
         busqueda_window.transient(self)
         busqueda_window.wait_window()
-    def registrar_venta(self):
-        print("Se registro una venta.")
     
+    def agregar_producto_venta(self):
+        try:
+            # Validar campos
+            id_producto = self.entry_id.get().strip()
+            cantidad = self.cantidad_spinbox.get()
+            cliente = self.combo_cliente.get()
+            
+            if not id_producto:
+                messagebox.showerror("Error", "Ingrese ID de producto")
+                return
+                
+            if not cantidad.isdigit() or int(cantidad) <= 0:
+                messagebox.showerror("Error", "Cantidad inválida")
+                return
+                
+            if not cliente:
+                messagebox.showerror("Error", "Seleccione un cliente")
+                return
+
+            # Obtener producto
+            producto = self.controller.model.obtener_producto_completo(id_producto)
+            if not producto:
+                messagebox.showerror("Error", "Producto no encontrado")
+                return
+                
+            # Verificar stock
+            if int(cantidad) > producto[2]:  # producto[2] = stock
+                messagebox.showerror("Error", f"Stock insuficiente. Disponible: {producto[2]}")
+                return
+
+            # Agregar a la lista
+            self.productos_venta.append({
+                'id': producto[0],
+                'nombre': producto[1],
+                'cantidad': int(cantidad),
+                'precio': float(producto[3]),
+                'talla': producto[6],
+                'proveedor': producto[4],
+                'tipo': producto[5],
+                'persona': producto[7],
+                'subtotal': int(cantidad) * float(producto[3])
+            })
+
+            # Actualizar resumen
+            self.actualizar_resumen_venta()
+            
+            # Limpiar campos
+            self.entry_id.delete(0, tk.END)
+            self.cantidad_spinbox.delete(0, tk.END)
+            self.cantidad_spinbox.insert(0, "1")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al agregar producto: {str(e)}")
+
+    def registrar_venta(self):
+        if not self.productos_venta:
+            messagebox.showerror("Error", "No hay productos en la venta")
+            return
+        
+        cliente = self.combo_cliente.get()
+        if not cliente:
+            messagebox.showerror("Error", "Debe seleccionar un cliente")
+            return
+        
+        try:
+            # Extraer datos del cliente
+            id_cliente = cliente.split("(ID: ")[1][:-1]
+            nombre_cliente = cliente.split(" (ID:")[0]
+            
+            # Calcular total
+            total = sum(p['subtotal'] for p in self.productos_venta)
+            
+            # Registrar venta en la base de datos
+            venta_id = self.controller.model.registrar_venta_completa(
+                id_cliente=id_cliente,
+                nombre_cliente=nombre_cliente,
+                usuario=self.username,
+                total=total,
+                productos=self.productos_venta
+            )
+            
+            if venta_id:
+                messagebox.showinfo("Éxito", f"Venta registrada con ID: {venta_id}")
+                self.productos_venta = []
+                self.actualizar_resumen_venta()
+            else:
+                messagebox.showerror("Error", "No se pudo registrar la venta")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al registrar venta: {str(e)}")
+    def actualizar_resumen_venta(self):
+        # Limpiar widgets anteriores
+        self.resumen_listbox.delete(0, tk.END)
+        for widget in self.buttons_frame.winfo_children():
+            widget.destroy()
+        
+        total = 0.0
+        
+        # Agregar productos al listbox
+        for i, producto in enumerate(self.productos_venta):
+            texto = f"{producto['nombre']} | Cant: {producto['cantidad']} | ${producto['precio']:.2f} c/u | Subtotal: ${producto['subtotal']:.2f}"
+            self.resumen_listbox.insert(tk.END, texto)
+            
+            # Crear botón de eliminar
+            btn = tk.Button(
+                self.buttons_frame, 
+                text="X", 
+                command=lambda idx=i: self.eliminar_producto_venta(idx),
+                bg='red', fg='white'
+            )
+            btn.pack(side=tk.TOP, pady=2)
+            
+            total += producto['subtotal']
+        
+        # Actualizar total
+        self.lbl_total.config(text=f"${total:.2f}")
+
+    def eliminar_producto_venta(self, index):
+        self.productos_venta.pop(index)
+        self.actualizar_resumen_venta()
+    def registrar_venta(self):
+        if not self.productos_venta:
+            messagebox.showerror("Error", "No hay productos en la venta")
+            return
+            
+        cliente = self.combo_cliente.get()
+        if not cliente:
+            messagebox.showerror("Error", "Seleccione un cliente")
+            return
+        
+        try:
+            # Extraer ID del cliente
+            id_cliente = cliente.split("(ID: ")[1][:-1]
+            nombre_cliente = cliente.split(" (ID:")[0]
+            
+            # Calcular total
+            total = sum(p['subtotal'] for p in self.productos_venta)
+            
+            # Registrar venta
+            venta_id = self.controller.model.registrar_venta_completa(
+                id_cliente=id_cliente,
+                nombre_cliente=nombre_cliente,
+                usuario=self.username,
+                total=total,
+                productos=self.productos_venta
+            )
+            
+            if venta_id:
+                messagebox.showinfo("Éxito", f"Venta registrada (ID: {venta_id})")
+                self.productos_venta = []
+                self.actualizar_resumen_venta()
+            else:
+                messagebox.showerror("Error", "No se pudo registrar la venta")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al registrar venta: {str(e)}")
     def show_inventario_content(self):
         self.clear_content_frame()
         
@@ -235,17 +428,41 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             ("ID:", "id"),
             ("Nombre del producto:", "nombre"),
             ("Cantidad en stock:", "cantidad"),
+            ("Precio por unidad al publico:", "precio_unitario"),
             ("Proveedor:", "proveedor"),
             ("Tipo de prenda:", "tipo"),
             ("Talla (P, M, G o número):", "talla"),
             ("Para (Hombre, Mujer, Niño, Niña):", "persona")
         ]
+        
         self.entries_inventario = {}
+        
+        # Obtener la lista de proveedores para el Combobox
+        proveedores = [proveedor[0] for proveedor in self.controller.model.obtener_proveedor()]
+        
         for label_text, key in campos:
             tk.Label(izquierda, text=label_text, bg='white').pack()
-            entry = tk.Entry(izquierda, width=40)
-            entry.pack(pady=5)
-            self.entries_inventario[key] = entry
+            
+            if key == "proveedor":
+                # Usar Combobox para el campo de proveedor
+                combo_proveedor = ttk.Combobox(
+                    izquierda, 
+                    width=37, 
+                    values=proveedores,
+                    postcommand=lambda: self.actualizar_lista_proveedores(combo_proveedor)
+                )
+                combo_proveedor.pack(pady=5)
+                self.entries_inventario[key] = combo_proveedor
+            elif key == "precio_unitario":
+                # Validación para que solo acepte números decimales
+                vcmd = (self.register(self.validar_precio), '%P')
+                entry = tk.Entry(izquierda, width=40, validate="key", validatecommand=vcmd)
+                entry.pack(pady=5)
+                self.entries_inventario[key] = entry
+            else:
+                entry = tk.Entry(izquierda, width=40)
+                entry.pack(pady=5)
+                self.entries_inventario[key] = entry
 
         # Botones
         btn_guardar = tk.Button(izquierda, text="Guardar", command=self.guardar_producto)
@@ -259,7 +476,12 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.resumen_inventario.pack(padx=10, pady=10)
 
         self.cargar_resumen_inventario()
-    
+
+    def actualizar_lista_proveedores(self, combobox):
+        """Actualiza la lista de proveedores en el Combobox"""
+        proveedores = [proveedor[0] for proveedor in self.controller.model.obtener_proveedor()]
+        combobox['values'] = proveedores
+        
     def guardar_producto(self):
         datos = {k: v.get().strip() for k, v in self.entries_inventario.items() 
                 if hasattr(self, 'entries_inventario') and k in self.entries_inventario and v.winfo_exists()}
@@ -268,24 +490,48 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             messagebox.showerror("Error", "Todos los campos son obligatorios")
             return
 
+        # Validaciones
         if not datos["cantidad"].isdigit():
-            messagebox.showerror("Error", "La cantidad debe ser un número")
+            messagebox.showerror("Error", "La cantidad debe ser un número entero")
+            return
+            
+        try:
+            precio = float(datos["precio_unitario"])
+            if precio < 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showerror("Error", "El precio debe ser un número decimal positivo")
             return
 
         exito = self.controller.model.agregar_producto(
-            datos["id"], datos["nombre"], int(datos["cantidad"]), 
-            datos["proveedor"], datos["tipo"], datos["talla"], datos["persona"]
+            datos["id"], 
+            datos["nombre"], 
+            int(datos["cantidad"]),
+            float(datos["precio_unitario"]),  # Nuevo campo
+            datos["proveedor"], 
+            datos["tipo"], 
+            datos["talla"], 
+            datos["persona"]
         )
 
         if exito:
             messagebox.showinfo("Éxito", "Producto agregado correctamente")
-            # Solo limpiar si las entradas existen
-            if hasattr(self, 'entries_inventario'):
-                self.limpiar_entradas_inventario()
+            self.limpiar_entradas_inventario()
             self.cargar_resumen_inventario()
         else:
             messagebox.showerror("Error", "Ya existe un producto con ese ID")
-
+            
+    
+    def validar_precio(self, nuevo_valor):
+        """Valida que el precio sea un número decimal positivo"""
+        if nuevo_valor == "":
+            return True
+        try:
+            float(nuevo_valor)
+            return float(nuevo_valor) >= 0
+        except ValueError:
+            return False
+    
     def show_baja_producto_content(self):
         self.clear_content_frame()
 
@@ -351,7 +597,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             for row in datos:
                 self.resumen_inventario.insert(
                     tk.END,
-                    f"{row[0]} | {row[1]} | Stock: {row[2]} | {row[3]} | Tipo: {row[4]} | Talla: {row[5]} | Para: {row[6]}"
+                    f"{row[0]} | {row[1]} | Stock: {row[2]} | {row[3]} | Tipo: {row[4]} | Talla: {row[5]} | Para: {row[6]} | precio: {row[7]}"
                 )
 
     def limpiar_entradas_inventario(self):
@@ -485,7 +731,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         derecha = tk.Frame(self.content_frame, bg='#f7f7f7', relief='sunken', borderwidth=1)
         derecha.pack(side='right', fill='both', expand=True, padx=20, pady=20)
 
-        tk.Label(izquierda, text="Capturar Producto", font=('Arial', 18), bg='white').pack(pady=10)
+        tk.Label(izquierda, text="Gestión de Proveedores", font=('Arial', 18), bg='white').pack(pady=10)
 
         campos = [
             ("Nombre del proveedor:", "nombre"),
@@ -499,18 +745,50 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             entry.pack(pady=5)
             self.entries_proveedores[key] = entry
 
-        # Botones
-        btn_guardar = tk.Button(izquierda, text="Guardar", command=self.guardar_proveedor)
-        btn_guardar.pack(pady=5)
-        btn_limpiar = tk.Button(izquierda, text="Limpiar", command=self.limpiar_entradas_proveedor)
-        btn_limpiar.pack(pady=5)
+        # Frame para botones
+        botones_frame = tk.Frame(izquierda, bg='#f7f7f7')
+        botones_frame.pack(pady=10)
+
+        # Botón para guardar
+        btn_guardar = tk.Button(botones_frame, text="Guardar", command=self.guardar_proveedor)
+        btn_guardar.pack(side='left', padx=5)
+
+        # Botón para limpiar
+        btn_limpiar = tk.Button(botones_frame, text="Limpiar", command=self.limpiar_entradas_proveedor)
+        btn_limpiar.pack(side='left', padx=5)
+
+        # Botón para eliminar
+        btn_eliminar = tk.Button(botones_frame, text="Eliminar", command=self.eliminar_proveedor)
+        btn_eliminar.pack(side='left', padx=5)
 
         # Lista a la derecha
-        tk.Label(derecha, text="Resumen de proveedor", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
+        tk.Label(derecha, text="Resumen de Proveedores", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
         self.resumen_proveedor = tk.Listbox(derecha, width=100, height=50)
         self.resumen_proveedor.pack(padx=10, pady=10)
 
         self.cargar_resumen_proveedor()
+
+    def eliminar_proveedor(self):
+        """Elimina un proveedor basado en el nombre ingresado"""
+        nombre = self.entries_proveedores["nombre"].get().strip()
+        
+        if not nombre:
+            messagebox.showerror("Error", "Debe ingresar el nombre del proveedor a eliminar")
+            return
+        
+        # Confirmar antes de eliminar
+        if not messagebox.askyesno("Confirmar", f"¿Está seguro que desea eliminar al proveedor {nombre}?"):
+            return
+        
+        # Llamar al modelo para eliminar
+        exito = self.controller.model.eliminar_proveedor(nombre)
+        
+        if exito:
+            messagebox.showinfo("Éxito", "Proveedor eliminado correctamente")
+            self.limpiar_entradas_proveedor()
+            self.cargar_resumen_proveedor()
+        else:
+            messagebox.showerror("Error", "No se encontró el proveedor o no pudo ser eliminado")
 
     def guardar_proveedor(self):
         datos = {k: v.get().strip() for k, v in self.entries_proveedores.items() 

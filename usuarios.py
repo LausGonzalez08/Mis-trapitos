@@ -14,6 +14,7 @@ class UserModel:
         self._ensure_inventario_db()
         self._ensure_clientes_db()
         self._ensure_proveedores_db()
+        self._ensure_ventas_db()  
     #----Funcion para la base de datos----
     def _ensure_historial_db(self):
         """Crea la base de datos de historial de logins si no existe"""
@@ -161,6 +162,7 @@ class UserModel:
                 id TEXT PRIMARY KEY,
                 nombre TEXT NOT NULL,
                 cantidad INTEGER NOT NULL,
+                precio_unitario REAL NOT NULL,
                 proveedor TEXT,
                 tipo TEXT,
                 talla TEXT,
@@ -170,13 +172,13 @@ class UserModel:
         conn.commit()
         conn.close()
 
-    def agregar_producto(self, id, nombre, cantidad, proveedor, tipo, talla, persona):
+    def agregar_producto(self, id, nombre, cantidad, precio_unitario, proveedor, tipo, talla, persona):
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO inventario (id, nombre, cantidad, proveedor, tipo, talla, persona) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (id, nombre, cantidad, proveedor, tipo, talla, persona)
+                "INSERT INTO inventario (id, nombre, cantidad, precio_unitario, proveedor, tipo, talla, persona) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (id, nombre, cantidad, precio_unitario, proveedor, tipo, talla, persona)
             )
             conn.commit()
             return True
@@ -193,6 +195,103 @@ class UserModel:
         conn.close()
         return datos
     
+    def _ensure_ventas_db(self):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        
+        # Tabla de ventas
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ventas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cliente_id TEXT NOT NULL,
+                cliente_nombre TEXT NOT NULL,
+                usuario TEXT NOT NULL,
+                fecha TEXT NOT NULL,
+                total REAL NOT NULL,
+                FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+            )
+        ''')
+        
+        # Tabla de detalles de venta
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS venta_detalle (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                venta_id INTEGER NOT NULL,
+                producto_id TEXT NOT NULL,
+                producto_nombre TEXT NOT NULL,
+                cantidad INTEGER NOT NULL,
+                precio_unitario REAL NOT NULL,
+                talla TEXT,
+                proveedor TEXT,
+                tipo TEXT,
+                persona TEXT,
+                subtotal REAL NOT NULL,
+                FOREIGN KEY (venta_id) REFERENCES ventas(id),
+                FOREIGN KEY (producto_id) REFERENCES inventario(id)
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    def obtener_producto_completo(self, id_producto):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, nombre, cantidad, precio_unitario, proveedor, tipo, talla, persona 
+            FROM inventario 
+            WHERE id = ?
+        """, (id_producto,))
+        producto = cursor.fetchone()
+        conn.close()
+        return producto
+
+    def registrar_venta_completa(self, id_cliente, nombre_cliente, usuario, total, productos):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        try:
+            # Registrar venta principal
+            cursor.execute("""
+                INSERT INTO ventas 
+                (cliente_id, cliente_nombre, usuario, fecha, total) 
+                VALUES (?, ?, ?, datetime('now'), ?)
+            """, (id_cliente, nombre_cliente, usuario, total))
+            venta_id = cursor.lastrowid
+            
+            # Registrar productos
+            for producto in productos:
+                cursor.execute("""
+                    INSERT INTO venta_detalle 
+                    (venta_id, producto_id, producto_nombre, cantidad, precio_unitario,
+                    talla, proveedor, tipo, persona, subtotal) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    venta_id,
+                    producto['id'],
+                    producto['nombre'],
+                    producto['cantidad'],
+                    producto['precio'],
+                    producto['talla'],
+                    producto['proveedor'],
+                    producto['tipo'],
+                    producto['persona'],
+                    producto['subtotal']
+                ))
+                
+                # Actualizar inventario
+                cursor.execute("""
+                    UPDATE inventario 
+                    SET cantidad = cantidad - ? 
+                    WHERE id = ?
+                """, (producto['cantidad'], producto['id']))
+            
+            conn.commit()
+            return venta_id
+        except sqlite3.Error as e:
+            conn.rollback()
+            print(f"Error al registrar venta: {e}")
+            return False
+        finally:
+            conn.close()
     def disminuir_cantidad_producto(self, id_producto, cantidad):
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
@@ -303,6 +402,19 @@ class UserModel:
         finally:
             conn.close()
 
+    def eliminar_proveedor(self, nombre):
+        """Elimina un proveedor por su nombre"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("DELETE FROM proveedores WHERE nombre = ?", (nombre,))
+            conn.commit()
+            return cursor.rowcount > 0  # Retorna True si se eliminó al menos un registro
+        except sqlite3.Error:
+            return False
+        finally:
+            conn.close()
+        
     def obtener_proveedor(self):
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
