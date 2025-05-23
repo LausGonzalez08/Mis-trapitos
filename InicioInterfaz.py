@@ -113,8 +113,8 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         tk.Label(izquierda_frame, text="ID de Producto:", bg='#f7f7f7').pack()
         id_frame = tk.Frame(izquierda_frame, bg='#f7f7f7')
         id_frame.pack(pady=5)
-        entry_id = tk.Entry(id_frame, width=30)
-        entry_id.pack(side='left')
+        self.entry_id = tk.Entry(id_frame, width=30)
+        self.entry_id.pack(side='left')
         btn_buscar = tk.Button(id_frame, text="🔍", width=2, command=self.buscar_producto_por_nombre)
         btn_buscar.pack(side='left', padx=5)
 
@@ -126,7 +126,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         tk.Entry(izquierda_frame, width=33).pack(pady=5)
 
         # 👇 Botones
-        btn_agregar = tk.Button(izquierda_frame, text="Agregar Producto", command=self.agregar_producto)
+        btn_agregar = tk.Button(izquierda_frame, text="Agregar Producto")
         btn_agregar.pack(pady=5)
 
 
@@ -142,20 +142,82 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
 
 
 #---------------------------FUNCIONES DE PRUEBA----------------------------------------------
-    def agregar_producto(self):
-        # Esto lo puedes reemplazar por lógica real
-        self.resumen_listbox.insert(tk.END, "Producto X - Cantidad: 1")
-        print("Producto agregado al resumen.")
-
     def buscar_producto_por_nombre(self):
-        # Aquí va la lógica que deseas implementar, por ahora solo imprime
-        print("Buscando producto por nombre...")
+        # Crear ventana de búsqueda
+        busqueda_window = tk.Toplevel(self)
+        busqueda_window.title("Buscar Producto")
+        busqueda_window.resizable(False, False)
         
+        # Frame para entrada de búsqueda
+        search_frame = tk.Frame(busqueda_window)
+        search_frame.pack(pady=10, padx=10, fill=tk.X)
+        
+        tk.Label(search_frame, text="Nombre del producto:").pack(side=tk.LEFT)
+        search_entry = tk.Entry(search_frame, width=30)
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        # Botón de búsqueda
+        def realizar_busqueda():
+            nombre = search_entry.get().strip()
+            if nombre:
+                resultados = self.controller.model.buscar_productos_por_nombre(nombre)
+                mostrar_resultados(resultados)
+        
+        search_btn = tk.Button(search_frame, text="Buscar", command=realizar_busqueda)
+        search_btn.pack(side=tk.LEFT)
+        
+        # Frame para resultados
+        results_frame = tk.Frame(busqueda_window)
+        results_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+        
+        # Lista de resultados
+        resultados_listbox = tk.Listbox(results_frame, width=60, height=10)
+        resultados_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        scrollbar = tk.Scrollbar(results_frame, orient=tk.VERTICAL)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        resultados_listbox.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=resultados_listbox.yview)
+        
+        # Función para mostrar resultados
+        def mostrar_resultados(productos):
+            resultados_listbox.delete(0, tk.END)
+            for producto in productos:
+                resultados_listbox.insert(tk.END, f"{producto[0]} | {producto[1]} | Stock: {producto[2]}")
+        
+        # Función para seleccionar producto - VERSIÓN CORREGIDA
+        def seleccionar_producto():
+            seleccion = resultados_listbox.curselection()
+            if seleccion:
+                producto_info = resultados_listbox.get(seleccion[0])
+                id_producto = producto_info.split(" | ")[0]  # Extraer el ID
+                
+                # Actualizar directamente el entry_id que ya tenemos como atributo
+                if hasattr(self, 'entry_id'):
+                    self.entry_id.delete(0, tk.END)
+                    self.entry_id.insert(0, id_producto)
+                    busqueda_window.destroy()
+        
+        select_btn = tk.Button(busqueda_window, text="Seleccionar", command=seleccionar_producto)
+        select_btn.pack(pady=10)
+        
+        # Hacer que la ventana sea modal
+        busqueda_window.grab_set()
+        busqueda_window.transient(self)
+        busqueda_window.wait_window()
     def registrar_venta(self):
         print("Se registro una venta.")
     
     def show_inventario_content(self):
         self.clear_content_frame()
+        
+        # Inicializar el diccionario si no existe
+        if not hasattr(self, 'entries_inventario'):
+            self.entries_inventario = {}
+        else:
+            # Limpiar el diccionario de entradas anteriores
+            self.entries_inventario.clear()
 
         izquierda = tk.Frame(self.content_frame, bg='#f7f7f7')
         izquierda.pack(side='left', fill='both', expand=True, padx=20, pady=20)
@@ -195,7 +257,9 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.cargar_resumen_inventario()
     
     def guardar_producto(self):
-        datos = {k: v.get().strip() for k, v in self.entries_inventario.items()}
+        datos = {k: v.get().strip() for k, v in self.entries_inventario.items() 
+                if hasattr(self, 'entries_inventario') and k in self.entries_inventario and v.winfo_exists()}
+        
         if not all(datos.values()):
             messagebox.showerror("Error", "Todos los campos son obligatorios")
             return
@@ -211,7 +275,9 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
 
         if exito:
             messagebox.showinfo("Éxito", "Producto agregado correctamente")
-            self.limpiar_entradas_inventario()
+            # Solo limpiar si las entradas existen
+            if hasattr(self, 'entries_inventario'):
+                self.limpiar_entradas_inventario()
             self.cargar_resumen_inventario()
         else:
             messagebox.showerror("Error", "Ya existe un producto con ese ID")
@@ -266,25 +332,37 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         # --- Derecha: resumen de inventario ---
         tk.Label(derecha_frame, text="Resumen de Inventario", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
 
-        self.resumen_listbox = tk.Listbox(derecha_frame, width=100, height=50)
-        self.resumen_listbox.pack(padx=10, pady=10)
+        # Usar el mismo nombre que en show_inventario_content
+        self.resumen_inventario = tk.Listbox(derecha_frame, width=100, height=50)
+        self.resumen_inventario.pack(padx=10, pady=10)
 
         # Cargar inventario en la lista
         self.cargar_resumen_inventario()
 
+    def cargar_resumen_inventario(self):
+        # Verificar si el Listbox existe
+        if hasattr(self, "resumen_inventario"):
+            self.resumen_inventario.delete(0, tk.END)
+            datos = self.controller.model.obtener_inventario()
+            for row in datos:
+                self.resumen_inventario.insert(
+                    tk.END,
+                    f"{row[0]} | {row[1]} | Stock: {row[2]} | {row[3]} | Tipo: {row[4]} | Talla: {row[5]} | Para: {row[6]}"
+                )
 
     def limpiar_entradas_inventario(self):
-        for entry in self.entries_inventario.values():
-            entry.delete(0, tk.END)
-
-    def cargar_resumen_inventario(self):
-        self.resumen_inventario.delete(0, tk.END)
-        datos = self.controller.model.obtener_inventario()
-        for row in datos:
-            self.resumen_inventario.insert(
-                tk.END,
-                f"{row[0]} | {row[1]} | Stock: {row[2]} | {row[3]} | Tipo: {row[4]} | Talla: {row[5]} | Para: {row[6]}"
-            )
+        # Verificar que el diccionario entries_inventario existe y tiene elementos
+        if hasattr(self, 'entries_inventario') and self.entries_inventario:
+            # Crear una copia de las claves para evitar problemas si se modifica durante la iteración
+            for key in list(self.entries_inventario.keys()):
+                entry = self.entries_inventario[key]
+                try:
+                    # Verificar si el widget aún existe
+                    if entry.winfo_exists():
+                        entry.delete(0, tk.END)
+                except tk.TclError:
+                    # Si el widget ya no existe, eliminarlo del diccionario
+                    del self.entries_inventario[key]
 
     def show_clientes_content(self):
         """Muestra el contenido para consultar clientes"""

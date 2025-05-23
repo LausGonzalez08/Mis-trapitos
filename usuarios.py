@@ -218,4 +218,13 @@ class UserModel:
         else:
             conn.close()
             return "no_encontrado"
-        
+    
+    def buscar_productos_por_nombre(self, nombre):
+        """Busca productos por nombre (coincidencia parcial)"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, nombre, cantidad FROM inventario WHERE nombre LIKE ?", 
+                    (f"%{nombre}%",))
+        productos = cursor.fetchall()
+        conn.close()
+        return productos
