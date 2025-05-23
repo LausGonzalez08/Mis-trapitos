@@ -85,6 +85,10 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             btn_clientes = tk.Button(self.button_frame, text="Consultar Clientes", width=20,
                                 command=self.show_clientes_content)
             btn_clientes.pack(pady=10, padx=10, fill=tk.X)
+
+            btn_proveedores = tk.Button(self.button_frame, text="Consultar proveedores", width=20,
+                                command=self.show_proveedores_content)
+            btn_proveedores.pack(pady=10, padx=10, fill=tk.X)
     
     def clear_content_frame(self):
         """Limpia el frame de contenido"""
@@ -364,6 +368,8 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
                     # Si el widget ya no existe, eliminarlo del diccionario
                     del self.entries_inventario[key]
 
+#clientes
+
     def show_clientes_content(self):
         """Muestra el contenido para consultar clientes"""
         self.clear_content_frame()
@@ -428,7 +434,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             messagebox.showinfo("Éxito", "Producto agregado correctamente")
             # Solo limpiar si las entradas existen
             if hasattr(self, 'entries_clientes'):
-                self.limpiar_entradas_clientes()
+                self.limpiar_entradas_cliente()
             self.cargar_resumen_cliente()
         else:
             messagebox.showerror("Error", "Ya existe un producto con ese ID")
@@ -456,4 +462,97 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
                 self.resumen_cliente.insert(
                     tk.END,
                     f"ID: {row[0]} | NOMBRE: {row[1]} | DIRECCION: {row[2]} | TELEFONO: {row[3]} | CORREO: {row[4]}"
+                )
+
+#proveedores
+
+    def show_proveedores_content(self):
+        """Muestra el contenido para consultar proveedores"""
+        self.clear_content_frame()
+        tk.Label(self.content_frame, text="Consultar proveedores", 
+                font=('Arial', 18), bg='white').pack(pady=20)
+
+        # Inicializar el diccionario si no existe
+        if not hasattr(self, 'entries_proveedores'):
+            self.entries_proveedores = {}
+        else:
+            # Limpiar el diccionario de entradas anteriores
+            self.entries_proveedores.clear()
+
+        izquierda = tk.Frame(self.content_frame, bg='#f7f7f7')
+        izquierda.pack(side='left', fill='both', expand=True, padx=20, pady=20)
+
+        derecha = tk.Frame(self.content_frame, bg='#f7f7f7', relief='sunken', borderwidth=1)
+        derecha.pack(side='right', fill='both', expand=True, padx=20, pady=20)
+
+        tk.Label(izquierda, text="Capturar Producto", font=('Arial', 18), bg='white').pack(pady=10)
+
+        campos = [
+            ("Nombre del proveedor:", "nombre"),
+            ("Contacto del proveedor:", "contacto"),
+            ("Direccion del proveedor:", "direccion")
+        ]
+        self.entries_proveedores = {}
+        for label_text, key in campos:
+            tk.Label(izquierda, text=label_text, bg='white').pack()
+            entry = tk.Entry(izquierda, width=40)
+            entry.pack(pady=5)
+            self.entries_proveedores[key] = entry
+
+        # Botones
+        btn_guardar = tk.Button(izquierda, text="Guardar", command=self.guardar_proveedor)
+        btn_guardar.pack(pady=5)
+        btn_limpiar = tk.Button(izquierda, text="Limpiar", command=self.limpiar_entradas_proveedor)
+        btn_limpiar.pack(pady=5)
+
+        # Lista a la derecha
+        tk.Label(derecha, text="Resumen de proveedor", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
+        self.resumen_proveedor = tk.Listbox(derecha, width=100, height=50)
+        self.resumen_proveedor.pack(padx=10, pady=10)
+
+        self.cargar_resumen_proveedor()
+
+    def guardar_proveedor(self):
+        datos = {k: v.get().strip() for k, v in self.entries_proveedores.items() 
+                if hasattr(self, 'entries_proveedores') and k in self.entries_proveedores and v.winfo_exists()}
+        
+        if not all(datos.values()):
+            messagebox.showerror("Error", "Todos los campos son obligatorios")
+            return
+
+        exito = self.controller.model.agregar_proveedor(
+            datos["nombre"], datos["contacto"], datos["direccion"])
+
+        if exito:
+            messagebox.showinfo("Éxito", "Proveedor agregado correctamente")
+            # Solo limpiar si las entradas existen
+            if hasattr(self, 'entries_proveedores'):
+                self.limpiar_entradas_proveedor()
+            self.cargar_resumen_proveedor()
+        else:
+            messagebox.showerror("Error", "Ya existe un producto con ese Nombre")
+
+    def limpiar_entradas_proveedor(self):
+        # Verificar que el diccionario entries_proveedores existe y tiene elementos
+        if hasattr(self, 'entries_proveedores') and self.entries_proveedores:
+            # Crear una copia de las claves para evitar problemas si se modifica durante la iteración
+            for key in list(self.entries_proveedores.keys()):
+                entry = self.entries_proveedores[key]
+                try:
+                    # Verificar si el widget aún existe
+                    if entry.winfo_exists():
+                        entry.delete(0, tk.END)
+                except tk.TclError:
+                    # Si el widget ya no existe, eliminarlo del diccionario
+                    del self.entries_proveedores[key]
+
+    def cargar_resumen_proveedor(self):
+        # Verificar si el Listbox existe
+        if hasattr(self, "resumen_proveedor"):
+            self.resumen_proveedor.delete(0, tk.END)
+            datos = self.controller.model.obtener_proveedor()
+            for row in datos:
+                self.resumen_proveedor.insert(
+                    tk.END,
+                    f"NOMBRE: {row[0]} | CONTACTO: {row[1]} | DIRECCION: {row[2]}"
                 )

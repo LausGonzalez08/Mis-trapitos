@@ -13,6 +13,7 @@ class UserModel:
         self._ensure_historial_db()
         self._ensure_inventario_db()
         self._ensure_clientes_db()
+        self._ensure_proveedores_db()
     #----Funcion para la base de datos----
     def _ensure_historial_db(self):
         """Crea la base de datos de historial de logins si no existe"""
@@ -230,6 +231,8 @@ class UserModel:
         conn.close()
         return productos
 
+#clientes
+
     def _ensure_clientes_db(self):
         """Crea la tabla de clientes"""
         conn = sqlite3.connect(self.db_name)
@@ -265,6 +268,45 @@ class UserModel:
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM clientes")
+        datos = cursor.fetchall()
+        conn.close()
+        return datos
+
+#proveedores
+
+    def _ensure_proveedores_db(self):
+        """Crea la tabla de proveedores"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS proveedores (
+                nombre TEXT PRIMARY KEY,
+                contacto TEXT NOT NULL,
+                direccion TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    def agregar_proveedor(self, nombre, contacto, direccion):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO proveedores (nombre, contacto, direccion) VALUES (?, ?, ?)",
+                (nombre, contacto, direccion)
+            )
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False
+        finally:
+            conn.close()
+
+    def obtener_proveedor(self):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM proveedores")
         datos = cursor.fetchall()
         conn.close()
         return datos
