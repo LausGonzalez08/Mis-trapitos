@@ -79,7 +79,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
                                     command=self.show_inventario_content)
             btn_inventario.pack(pady=10, padx=10, fill=tk.X)
             
-            btn_baja = tk.Button(self.button_frame, text="Baja de Producto", width=20, command=self.baja_producto_popup)
+            btn_baja = tk.Button(self.button_frame, text="Baja de Producto", width=20, command=self.show_baja_producto_content)
             btn_baja.pack(pady=10, padx=10, fill=tk.X)
         
             btn_clientes = tk.Button(self.button_frame, text="Consultar Clientes", width=20,
@@ -136,8 +136,8 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         # --- Derecha: resumen de productos ---
         tk.Label(derecha_frame, text="Resumen de Venta", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
 
-        self.resumen_listbox = tk.Listbox(derecha_frame, width=100, height=50)
-        self.resumen_listbox.pack(padx=10, pady=10)
+        self.resumen_inventario = tk.Listbox(derecha_frame, width=100, height=50)
+        self.resumen_inventario.pack(padx=10, pady=10)
 
 
 
@@ -216,20 +216,28 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         else:
             messagebox.showerror("Error", "Ya existe un producto con ese ID")
 
-    def baja_producto_popup(self):
-        popup = tk.Toplevel(self)
-        popup.title("Baja de Producto")
-        popup.geometry("300x200")
-        popup.resizable(False, False)
+    def show_baja_producto_content(self):
+        self.clear_content_frame()
 
-        tk.Label(popup, text="ID del producto:").pack(pady=5)
-        entry_id = tk.Entry(popup)
+        # Frame principal dividido en dos
+        izquierda_frame = tk.Frame(self.content_frame, bg='#f7f7f7')
+        izquierda_frame.pack(side='left', fill='both', expand=True, padx=20, pady=20)
+
+        derecha_frame = tk.Frame(self.content_frame, bg='#f7f7f7', relief='sunken', borderwidth=1)
+        derecha_frame.pack(side='right', fill='both', expand=True, padx=20, pady=20)
+
+        # --- Izquierda: ingreso de datos ---
+        tk.Label(izquierda_frame, text="Baja de Producto", font=('Arial', 18), bg='#f7f7f7').pack(pady=10)
+
+        tk.Label(izquierda_frame, text="ID del Producto:", bg='#f7f7f7').pack()
+        entry_id = tk.Entry(izquierda_frame, width=30)
         entry_id.pack(pady=5)
 
-        tk.Label(popup, text="Cantidad a dar de baja:").pack(pady=5)
-        entry_cantidad = tk.Entry(popup)
+        tk.Label(izquierda_frame, text="Cantidad a dar de baja:", bg='#f7f7f7').pack()
+        entry_cantidad = tk.Entry(izquierda_frame, width=30)
         entry_cantidad.pack(pady=5)
 
+        # Función para confirmar la baja del producto
         def confirmar_baja():
             id_producto = entry_id.get().strip()
             cantidad = entry_cantidad.get().strip()
@@ -250,10 +258,20 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             elif resultado == "no_encontrado":
                 messagebox.showerror("Error", "Producto no encontrado.")
 
-            popup.destroy()
             self.cargar_resumen_inventario()
 
-        tk.Button(popup, text="Confirmar", command=confirmar_baja).pack(pady=10)
+        # Botón para confirmar la baja
+        tk.Button(izquierda_frame, text="Confirmar Baja", command=confirmar_baja).pack(pady=10)
+
+        # --- Derecha: resumen de inventario ---
+        tk.Label(derecha_frame, text="Resumen de Inventario", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
+
+        self.resumen_listbox = tk.Listbox(derecha_frame, width=100, height=50)
+        self.resumen_listbox.pack(padx=10, pady=10)
+
+        # Cargar inventario en la lista
+        self.cargar_resumen_inventario()
+
 
     def limpiar_entradas_inventario(self):
         for entry in self.entries_inventario.values():
