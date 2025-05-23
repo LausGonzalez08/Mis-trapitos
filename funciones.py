@@ -19,6 +19,8 @@ class AppController:
         self.register_view = None #Obtiene register_view
         self.root.withdraw() #Oculta la ventana
         self.login_view.entry_contraseña.bind("<Return>", self.login)# Enlazar evento <Return> al campo de contraseña
+    
+    
     #Funcion para Login
     def login(self, event=None):
         usuario = self.login_view.entry_usuario.get()

@@ -2,6 +2,8 @@
 #----Bibliotecas----
 from funciones import AppController 
 """se importa AppControler (orquestador de modulos del programa) de funciones.py"""
+from scheduler import aplicar_descuentos_periodicamente
+aplicar_descuentos_periodicamente()
 
 if __name__ == "__main__":#se crea un main algo como en C++
     app = AppController() #Se asigna AppController a app

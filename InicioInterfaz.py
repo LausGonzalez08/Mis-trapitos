@@ -4,6 +4,7 @@ import tkinter as tk #Tkinter que es la libreria para la interfaz, que se import
 import sys #Importamos Sys 
 from ajustesinterfaz import SettingView
 from tkinter import messagebox, ttk
+from datetime import datetime
 
 #----Clase para Interfaz de inicio----
 class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la principal
@@ -41,7 +42,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.content_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
         self._make_menu()
-        self._make_buttons()
+        self._make_buttons(self.is_admin)
         
         # Mostrar contenido inicial (opcional)
         self.show_default_content()
@@ -69,27 +70,51 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.barra_menu.add_cascade(label="Opciones", menu=menu_opciones)#Agrega el boton "Opciones" a la barra de menu
 
     
-    def _make_buttons(self):
-            # Botones con comandos que cambian el contenido
-            btn_venta = tk.Button(self.button_frame, text="Generar venta", width=20,
-                                command=self.show_venta_content)
-            btn_venta.pack(pady=10, padx=10, fill=tk.X)
-            
-            btn_inventario = tk.Button(self.button_frame, text="Capturar Inventario", width=20,
-                                    command=self.show_inventario_content)
-            btn_inventario.pack(pady=10, padx=10, fill=tk.X)
-            
-            btn_baja = tk.Button(self.button_frame, text="Baja de Producto", width=20, command=self.show_baja_producto_content)
-            btn_baja.pack(pady=10, padx=10, fill=tk.X)
+    def _make_buttons(self, is_admin=False):
+        """Crea los botones de la interfaz según los permisos del usuario"""
+        self.is_admin = is_admin  # Guardar el estado de admin como atributo
         
-            btn_clientes = tk.Button(self.button_frame, text="Consultar Clientes", width=20,
-                                command=self.show_clientes_content)
-            btn_clientes.pack(pady=10, padx=10, fill=tk.X)
+        # Botones comunes para todos los usuarios
+        btn_venta = tk.Button(self.button_frame, text="Generar venta", width=20,
+                            command=self.show_venta_content)
+        btn_venta.pack(pady=10, padx=10, fill=tk.X)
+        
+        btn_inventario = tk.Button(self.button_frame, text="Capturar Inventario", width=20,
+                                command=self.show_inventario_content)
+        btn_inventario.pack(pady=10, padx=10, fill=tk.X)
+        
+        btn_baja = tk.Button(self.button_frame, text="Baja de Producto", width=20,
+                            command=self.show_baja_producto_content)
+        btn_baja.pack(pady=10, padx=10, fill=tk.X)
+        
+        btn_clientes = tk.Button(self.button_frame, text="Consultar Clientes", width=20,
+                            command=self.show_clientes_content)
+        btn_clientes.pack(pady=10, padx=10, fill=tk.X)
 
-            btn_proveedores = tk.Button(self.button_frame, text="Consultar proveedores", width=20,
+        btn_proveedores = tk.Button(self.button_frame, text="Consultar proveedores", width=20,
                                 command=self.show_proveedores_content)
-            btn_proveedores.pack(pady=10, padx=10, fill=tk.X)
+        btn_proveedores.pack(pady=10, padx=10, fill=tk.X)
+        
+        # Botones solo para administradores
+        if self.is_admin:
+            btn_descuentos = tk.Button(self.button_frame, text="Agregar descuentos", width=20,
+                                    command=self.show_descuentos_content)
+            btn_descuentos.pack(pady=10, padx=10, fill=tk.X)
+            
+            # Puedes agregar más botones de admin aquí si es necesario
+            btn_admin_extra = tk.Button(self.button_frame, text="Opciones Admin", width=20,
+                                    command=self.show_admin_panel)
+            btn_admin_extra.pack(pady=10, padx=10, fill=tk.X)
     
+    def actualizar_permisos(self, is_admin):
+        """Actualiza los botones según los nuevos permisos"""
+        self.is_admin = is_admin
+        # Limpiar el frame de botones
+        for widget in self.button_frame.winfo_children():
+            widget.destroy()
+        # Volver a crear los botones con los nuevos permisos
+        self._make_buttons(self.is_admin)
+        
     def clear_content_frame(self):
         """Limpia el frame de contenido"""
         for widget in self.content_frame.winfo_children():
@@ -178,6 +203,153 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         self.lbl_total = tk.Label(total_frame, text="$0.00", font=('Arial', 12, 'bold'), bg='#f7f7f7')
         self.lbl_total.pack(side=tk.LEFT, padx=10)
 
+    def show_descuentos_content(self):
+        """Muestra la interfaz de gestión de descuentos"""
+        self.clear_content_frame()
+        
+        # Frame principal
+        main_frame = tk.Frame(self.content_frame, bg='#f7f7f7')
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Frame para formulario
+        form_frame = tk.Frame(main_frame, bg='#f7f7f7')
+        form_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10)
+        
+        # Frame para lista de descuentos
+        list_frame = tk.Frame(main_frame, bg='#f7f7f7')
+        list_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        
+        # Título
+        tk.Label(form_frame, text="Agregar Descuento", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
+        
+        # Campos del formulario
+        campos = [
+            ("ID Producto:", "producto_id"),
+            ("Nombre Producto:", "producto_nombre"),
+            ("Precio Actual:", "precio_actual"),
+            ("Precio con Descuento:", "precio_descuento"),
+            ("Fecha Inicio (YYYY-MM-DD):", "fecha_inicio"),
+            ("Fecha Fin (YYYY-MM-DD):", "fecha_fin")
+        ]
+        
+        self.entries_descuento = {}
+        for label, key in campos:
+            tk.Label(form_frame, text=label, bg='#f7f7f7').pack()
+            
+            if key == "producto_id":
+                # Combobox para seleccionar producto
+                productos = self.controller.model.obtener_inventario()
+                producto_list = [f"{p[0]} - {p[1]}" for p in productos]
+                combo = ttk.Combobox(form_frame, width=25, values=producto_list)
+                combo.pack(pady=5)
+                self.entries_descuento[key] = combo
+                
+                # Botón para buscar producto
+                btn_buscar = tk.Button(form_frame, text="Buscar", command=self.buscar_producto_descuento)
+                btn_buscar.pack(pady=5)
+            else:
+                entry = tk.Entry(form_frame, width=30)
+                entry.pack(pady=5)
+                self.entries_descuento[key] = entry
+        
+        # Botón para agregar descuento
+        btn_agregar = tk.Button(form_frame, text="Agregar Descuento", command=self.agregar_descuento)
+        btn_agregar.pack(pady=15)
+        
+        # Lista de descuentos activos
+        tk.Label(list_frame, text="Descuentos Activos", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
+        
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.lista_descuentos = tk.Listbox(
+            list_frame, 
+            width=80, 
+            height=20,
+            yscrollcommand=scrollbar.set
+        )
+        self.lista_descuentos.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.lista_descuentos.yview)
+        
+        self.actualizar_lista_descuentos()
+    
+    def buscar_producto_descuento(self):
+        """Busca y completa los datos del producto para el descuento"""
+        seleccion = self.entries_descuento["producto_id"].get()
+        if not seleccion:
+            return
+        
+        producto_id = seleccion.split(" - ")[0]
+        producto = self.controller.model.obtener_producto_completo(producto_id)
+        
+        if producto:
+            self.entries_descuento["producto_nombre"].delete(0, tk.END)
+            self.entries_descuento["producto_nombre"].insert(0, producto[1])
+            
+            self.entries_descuento["precio_actual"].delete(0, tk.END)
+            self.entries_descuento["precio_actual"].insert(0, str(producto[3]))
+
+    def agregar_descuento(self):
+        """Agrega un nuevo descuento a la base de datos"""
+        try:
+            producto_id = self.entries_descuento["producto_id"].get().split(" - ")[0]
+            producto_nombre = self.entries_descuento["producto_nombre"].get()
+            precio_anterior = float(self.entries_descuento["precio_actual"].get())
+            precio_descuento = float(self.entries_descuento["precio_descuento"].get())
+            fecha_inicio = self.entries_descuento["fecha_inicio"].get()
+            fecha_fin = self.entries_descuento["fecha_fin"].get()
+            
+            # Validar fechas
+            datetime.strptime(fecha_inicio, "%Y-%m-%d")
+            datetime.strptime(fecha_fin, "%Y-%m-%d")
+            
+            if precio_descuento >= precio_anterior:
+                messagebox.showerror("Error", "El precio con descuento debe ser menor al precio actual")
+                return
+                
+            if self.controller.model.agregar_descuento(
+                producto_id, producto_nombre, precio_anterior, 
+                precio_descuento, fecha_inicio, fecha_fin
+            ):
+                messagebox.showinfo("Éxito", "Descuento agregado correctamente")
+                self.actualizar_lista_descuentos()
+                self.limpiar_campos_descuento()
+                # Aplicar descuentos inmediatamente si corresponde
+                self.controller.model.aplicar_descuentos()
+            else:
+                messagebox.showerror("Error", "No se pudo agregar el descuento")
+                
+        except ValueError as e:
+            messagebox.showerror("Error", f"Datos inválidos: {str(e)}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error inesperado: {str(e)}")
+
+    def actualizar_lista_descuentos(self):
+        """Actualiza la lista de descuentos activos"""
+        self.lista_descuentos.delete(0, tk.END)
+        descuentos = self.controller.model.obtener_descuentos_activos()
+        
+        for descuento in descuentos:
+            texto = (
+                f"Producto: {descuento[2]} (ID: {descuento[1]}) | "
+                f"Precio: ${descuento[3]:.2f} → ${descuento[4]:.2f} | "
+                f"Válido: {descuento[5]} a {descuento[6]}"
+            )
+            self.lista_descuentos.insert(tk.END, texto)
+
+    def limpiar_campos_descuento(self):
+        """Limpia los campos del formulario de descuentos"""
+        for entry in self.entries_descuento.values():
+            if isinstance(entry, tk.Entry):
+                entry.delete(0, tk.END)
+            elif isinstance(entry, ttk.Combobox):
+                entry.set('')
+    def show_admin_panel(self):
+        """Muestra el panel de administración"""
+        self.clear_content_frame()
+        tk.Label(self.content_frame, text="Panel de Administración", 
+                font=('Arial', 18), bg='white').pack(pady=20)
+        # Implementa las funciones administrativas aquí
     def actualizar_lista_clientes(self, combobox):
         """Actualiza la lista de clientes en el Combobox"""
         clientes = [f"{cliente[1]} (ID: {cliente[0]})" for cliente in self.controller.model.obtener_clientes()]

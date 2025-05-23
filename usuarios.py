@@ -15,6 +15,7 @@ class UserModel:
         self._ensure_clientes_db()
         self._ensure_proveedores_db()
         self._ensure_ventas_db()  
+        self._ensure_descuentos_db()
     #----Funcion para la base de datos----
     def _ensure_historial_db(self):
         """Crea la base de datos de historial de logins si no existe"""
@@ -422,3 +423,75 @@ class UserModel:
         datos = cursor.fetchall()
         conn.close()
         return datos
+    
+    #Descuentos
+    def _ensure_descuentos_db(self):
+        """Crea la tabla de descuentos si no existe"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS descuentos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                producto_id TEXT NOT NULL,
+                producto_nombre TEXT NOT NULL,
+                precio_anterior REAL NOT NULL,
+                precio_descuento REAL NOT NULL,
+                fecha_inicio TEXT NOT NULL,
+                fecha_fin TEXT NOT NULL,
+                FOREIGN KEY (producto_id) REFERENCES inventario(id)
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    
+    def agregar_descuento(self, producto_id, producto_nombre, precio_anterior, precio_descuento, fecha_inicio, fecha_fin):
+        """Agrega un nuevo descuento a la base de datos"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO descuentos 
+                (producto_id, producto_nombre, precio_anterior, precio_descuento, fecha_inicio, fecha_fin)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (producto_id, producto_nombre, precio_anterior, precio_descuento, fecha_inicio, fecha_fin))
+            conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Error al agregar descuento: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def obtener_descuentos_activos(self):
+        """Obtiene los descuentos que están actualmente activos"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        ahora = datetime.now().strftime("%Y-%m-%d")
+        cursor.execute('''
+            SELECT * FROM descuentos 
+            WHERE fecha_inicio <= ? AND fecha_fin >= ?
+        ''', (ahora, ahora))
+        descuentos = cursor.fetchall()
+        conn.close()
+        return descuentos
+
+    def aplicar_descuentos(self):
+        """Aplica los descuentos activos al inventario"""
+        descuentos = self.obtener_descuentos_activos()
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        try:
+            for descuento in descuentos:
+                producto_id = descuento[1]
+                nuevo_precio = descuento[4]
+                cursor.execute('''
+                    UPDATE inventario 
+                    SET precio_unitario = ? 
+                    WHERE id = ?
+                ''', (nuevo_precio, producto_id))
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            print(f"Error al aplicar descuentos: {e}")
+        finally:
+            conn.close()
