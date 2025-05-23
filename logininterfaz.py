@@ -13,8 +13,8 @@ class LoginView(tk.Toplevel):
         #icono
         icono = tk.PhotoImage(file="icono.png")
         self.tk.call("wm", "iconphoto", self._w, icono)
-        self.resizable(False, False)
-        self.state('zoomed')
+        self.resizable(True, True)
+        self.state('normal')
         self._make_widgets()
         
     def _make_widgets(self):

@@ -228,3 +228,42 @@ class UserModel:
         productos = cursor.fetchall()
         conn.close()
         return productos
+
+    def _ensure_clientes_db(self):
+        """Crea la tabla de clientes"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS clientes (
+                id TEXT PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                direccion TEXT,
+                telefono TEXT,
+                correo TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    def agregar_cliente(self, id, nombre, direccion, telefono, correo):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO cliente (id, nombre, direccion, telefono, correo) VALUES (?, ?, ?, ?, ?)",
+                (id, nombre, direccion, telefono, correo)
+            )
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False
+        finally:
+            conn.close()
+
+    def obtener_clientes(self):
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM clientes")
+        datos = cursor.fetchall()
+        conn.close()
+        return datos

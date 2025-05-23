@@ -23,8 +23,8 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         #icono
         icono = tk.PhotoImage(file="icono.png")
         self.tk.call("wm", "iconphoto", self._w, icono)
-        self.resizable(False, False)
-        self.state('zoomed')#Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
+        self.resizable(True, True)
+        self.state('normal')#Tamaño de ventana(<ancho>x<alto>±<posición_x>±<posición_y>)
         #self._make_menu()# Crea el menú superior
         #self._make_buttons()  # Crea los botones en la parte inferior
         
