@@ -5,6 +5,8 @@ import sys #Importamos Sys
 from ajustesinterfaz import SettingView
 from tkinter import messagebox, ttk
 from datetime import datetime
+from tkcalendar import DateEntry
+from datetime import datetime, timedelta
 
 #----Clase para Interfaz de inicio----
 class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la principal
@@ -60,11 +62,14 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             menu_opciones.add_command(label="Nuevo Usuario", command=self.controller.show_register) 
             menu_opciones.add_separator()
             menu_opciones.add_command(label="Datos de Usuarios", command=self.controller.show_user_data)
+            menu_opciones.add_separator()
+            # Cambia la línea del menú a:
+            menu_opciones.add_command(label="Configurar Backups", command=self.controller.backup_manager.show_backup_settings)
             """añade un boton al submenu con la opcion para añadir nuevo usuario y manda a llamar controller para abrir la interfaz de show_register"""
         menu_opciones.add_separator()
         menu_opciones.add_command(label="Cerrar sesión", command=self.controller.logout)
         """añade un boton al submenu con la opcion para añadir nuevo usuario y manda a llamar controller para abrir la interfaz de login"""
-        menu_opciones.add_command(label="Salir", command=sys.exit)
+        menu_opciones.add_command(label="Salir", command=lambda: [self.destroy(), sys.exit()])
         """añade un boton al submenu con la opcion para Salir y hace uso de la biblioteca Sys,
         esto es para que se cierre completamente el programa y que cualquier subproceso que haya quedado, se termine completamente."""
         self.barra_menu.add_cascade(label="Opciones", menu=menu_opciones)#Agrega el boton "Opciones" a la barra de menu
@@ -102,8 +107,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             btn_descuentos.pack(pady=10, padx=10, fill=tk.X)
             
             # Puedes agregar más botones de admin aquí si es necesario
-            btn_admin_extra = tk.Button(self.button_frame, text="Opciones Admin", width=20,
-                                    command=self.show_admin_panel)
+            btn_admin_extra = tk.Button(self.button_frame, text="Hitorial de ventas", width=20, command=self.show_historial_ventas)
             btn_admin_extra.pack(pady=10, padx=10, fill=tk.X)
     
     def actualizar_permisos(self, is_admin):
@@ -222,14 +226,18 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         # Título
         tk.Label(form_frame, text="Agregar Descuento", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
         
+        # Fechas por defecto
+        fecha_inicio_default = datetime.now()
+        fecha_fin_default = fecha_inicio_default + timedelta(days=1)  # Día siguiente
+        
         # Campos del formulario
         campos = [
             ("ID Producto:", "producto_id"),
             ("Nombre Producto:", "producto_nombre"),
             ("Precio Actual:", "precio_actual"),
             ("Precio con Descuento:", "precio_descuento"),
-            ("Fecha Inicio (YYYY-MM-DD):", "fecha_inicio"),
-            ("Fecha Fin (YYYY-MM-DD):", "fecha_fin")
+            ("Fecha Inicio:", "fecha_inicio"),
+            ("Fecha Fin:", "fecha_fin")
         ]
         
         self.entries_descuento = {}
@@ -247,6 +255,25 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
                 # Botón para buscar producto
                 btn_buscar = tk.Button(form_frame, text="Buscar", command=self.buscar_producto_descuento)
                 btn_buscar.pack(pady=5)
+            elif key in ["fecha_inicio", "fecha_fin"]:
+                # Selector de fechas
+                date_entry = DateEntry(
+                    form_frame,
+                    width=12,
+                    background='darkblue',
+                    foreground='white',
+                    borderwidth=2,
+                    date_pattern='yyyy-mm-dd',
+                    mindate=fecha_inicio_default if key == "fecha_inicio" else fecha_fin_default
+                )
+                # Establecer fecha por defecto
+                if key == "fecha_inicio":
+                    date_entry.set_date(fecha_inicio_default)
+                else:
+                    date_entry.set_date(fecha_fin_default)
+                
+                date_entry.pack(pady=5)
+                self.entries_descuento[key] = date_entry
             else:
                 entry = tk.Entry(form_frame, width=30)
                 entry.pack(pady=5)
@@ -296,8 +323,9 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
             producto_nombre = self.entries_descuento["producto_nombre"].get()
             precio_anterior = float(self.entries_descuento["precio_actual"].get())
             precio_descuento = float(self.entries_descuento["precio_descuento"].get())
-            fecha_inicio = self.entries_descuento["fecha_inicio"].get()
-            fecha_fin = self.entries_descuento["fecha_fin"].get()
+            # Obtener fechas de los DateEntry
+            fecha_inicio = self.entries_descuento["fecha_inicio"].get_date().strftime("%Y-%m-%d")
+            fecha_fin = self.entries_descuento["fecha_fin"].get_date().strftime("%Y-%m-%d")
             
             # Validar fechas
             datetime.strptime(fecha_inicio, "%Y-%m-%d")
@@ -344,11 +372,155 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
                 entry.delete(0, tk.END)
             elif isinstance(entry, ttk.Combobox):
                 entry.set('')
-    def show_admin_panel(self):
-        """Muestra el panel de administración"""
+    def show_historial_ventas(self):
+        """Muestra el historial completo de ventas"""
         self.clear_content_frame()
-        tk.Label(self.content_frame, text="Panel de Administración", 
-                font=('Arial', 18), bg='white').pack(pady=20)
+        
+        # Frame principal
+        main_frame = tk.Frame(self.content_frame, bg='#f7f7f7')
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Notebook (pestañas)
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # Pestaña 1: Historial completo
+        tab1 = tk.Frame(notebook, bg='#f7f7f7')
+        notebook.add(tab1, text="Historial Completo")
+        self._crear_lista_ventas(tab1)
+        
+        # Pestaña 2: Estadísticas
+        tab2 = tk.Frame(notebook, bg='#f7f7f7')
+        notebook.add(tab2, text="Estadísticas")
+        self._crear_estadisticas_ventas(tab2)
+
+    def _crear_lista_ventas(self, parent):
+        """Crea la lista de ventas en el frame padre"""
+        tk.Label(parent, text="Historial de Ventas", font=('Arial', 16), bg='#f7f7f7').pack(pady=10)
+        
+        # Frame para filtros
+        filter_frame = tk.Frame(parent, bg='#f7f7f7')
+        filter_frame.pack(fill=tk.X, pady=5)
+        
+        tk.Label(filter_frame, text="Fecha inicio:", bg='#f7f7f7').pack(side=tk.LEFT)
+        self.fecha_inicio_filter = DateEntry(filter_frame, width=12, date_pattern='yyyy-mm-dd')
+        self.fecha_inicio_filter.pack(side=tk.LEFT, padx=5)
+        
+        tk.Label(filter_frame, text="Fecha fin:", bg='#f7f7f7').pack(side=tk.LEFT)
+        self.fecha_fin_filter = DateEntry(filter_frame, width=12, date_pattern='yyyy-mm-dd')
+        self.fecha_fin_filter.pack(side=tk.LEFT, padx=5)
+        
+        tk.Button(filter_frame, text="Filtrar", command=self._aplicar_filtro_ventas).pack(side=tk.LEFT, padx=10)
+        
+        # Lista de ventas
+        list_frame = tk.Frame(parent)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+        
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.ventas_listbox = tk.Listbox(
+            list_frame, 
+            width=120, 
+            height=25,
+            yscrollcommand=scrollbar.set
+        )
+        self.ventas_listbox.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.ventas_listbox.yview)
+        
+        # Cargar datos
+        self._cargar_ventas()
+
+    def _cargar_ventas(self, fecha_inicio=None, fecha_fin=None):
+        """Carga las ventas en el listbox"""
+        self.ventas_listbox.delete(0, tk.END)
+        ventas = self.controller.model.obtener_historial_ventas()
+        
+        for venta in ventas:
+            texto = (f"Venta ID: {venta[0]} | Cliente: {venta[1]} | Vendedor: {venta[2]} | "
+                    f"Fecha: {venta[3]} | Total: ${venta[4]:.2f} | Productos: {venta[5]}")
+            self.ventas_listbox.insert(tk.END, texto)
+
+    def _aplicar_filtro_ventas(self):
+        """Aplica el filtro por fechas"""
+        fecha_inicio = self.fecha_inicio_filter.get_date().strftime("%Y-%m-%d")
+        fecha_fin = self.fecha_fin_filter.get_date().strftime("%Y-%m-%d")
+        
+        if fecha_inicio > fecha_fin:
+            messagebox.showerror("Error", "La fecha de inicio no puede ser mayor a la fecha fin")
+            return
+        
+        # Aquí implementarías la lógica para filtrar las ventas por fecha
+        # Por ahora solo mostramos un mensaje
+        messagebox.showinfo("Filtro", f"Filtrando ventas entre {fecha_inicio} y {fecha_fin}")
+
+    def _crear_estadisticas_ventas(self, parent):
+        """Crea las estadísticas de ventas en el frame padre"""
+        # Frame para productos más vendidos
+        top_frame = tk.Frame(parent, bg='#f7f7f7')
+        top_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        tk.Label(top_frame, text="Productos más vendidos", font=('Arial', 14), bg='#f7f7f7').pack()
+        
+        # Frame para filtros
+        filter_frame = tk.Frame(top_frame, bg='#f7f7f7')
+        filter_frame.pack(fill=tk.X, pady=5)
+        
+        tk.Label(filter_frame, text="Periodo:", bg='#f7f7f7').pack(side=tk.LEFT)
+        
+        self.periodo_var = tk.StringVar(value="mes")
+        tk.Radiobutton(filter_frame, text="Último mes", variable=self.periodo_var, 
+                    value="mes", bg='#f7f7f7').pack(side=tk.LEFT)
+        tk.Radiobutton(filter_frame, text="Últimos 3 meses", variable=self.periodo_var, 
+                    value="trimestre", bg='#f7f7f7').pack(side=tk.LEFT)
+        tk.Radiobutton(filter_frame, text="Todo el historial", variable=self.periodo_var, 
+                    value="todo", bg='#f7f7f7').pack(side=tk.LEFT)
+        
+        tk.Button(filter_frame, text="Actualizar", command=self._actualizar_estadisticas).pack(side=tk.LEFT, padx=10)
+        
+        # Lista de productos más vendidos
+        self.top_listbox = tk.Listbox(top_frame, width=80, height=10)
+        self.top_listbox.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        # Frame para productos no vendidos
+        bottom_frame = tk.Frame(parent, bg='#f7f7f7')
+        bottom_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        tk.Label(bottom_frame, text="Productos sin ventas", font=('Arial', 14), bg='#f7f7f7').pack()
+        
+        # Lista de productos no vendidos
+        self.no_vendidos_listbox = tk.Listbox(bottom_frame, width=80, height=10)
+        self.no_vendidos_listbox.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        # Cargar datos iniciales
+        self._actualizar_estadisticas()
+
+    def _actualizar_estadisticas(self):
+        """Actualiza las estadísticas según los filtros seleccionados"""
+        # Obtener período seleccionado
+        periodo = self.periodo_var.get()
+        
+        fecha_inicio, fecha_fin = None, None
+        hoy = datetime.now().date()
+        
+        if periodo == "mes":
+            fecha_inicio = (hoy - timedelta(days=30)).strftime("%Y-%m-%d")
+            fecha_fin = hoy.strftime("%Y-%m-%d")
+        elif periodo == "trimestre":
+            fecha_inicio = (hoy - timedelta(days=90)).strftime("%Y-%m-%d")
+            fecha_fin = hoy.strftime("%Y-%m-%d")
+        
+        # Productos más vendidos
+        self.top_listbox.delete(0, tk.END)
+        productos = self.controller.model.obtener_productos_mas_vendidos(fecha_inicio, fecha_fin)
+        for producto in productos:
+            self.top_listbox.insert(tk.END, f"{producto[1]} (ID: {producto[0]}) - Vendidos: {producto[2]}")
+        
+        # Productos no vendidos
+        self.no_vendidos_listbox.delete(0, tk.END)
+        no_vendidos = self.controller.model.obtener_productos_no_vendidos()
+        for producto in no_vendidos:
+            self.no_vendidos_listbox.insert(tk.END, f"{producto[1]} (ID: {producto[0]}) - Stock: {producto[2]}")
         # Implementa las funciones administrativas aquí
     def actualizar_lista_clientes(self, combobox):
         """Actualiza la lista de clientes en el Combobox"""
@@ -807,7 +979,7 @@ class MainView(tk.Toplevel):#Toplevel es para que la ventana pase a ser la princ
         derecha = tk.Frame(self.content_frame, bg='#f7f7f7', relief='sunken', borderwidth=1)
         derecha.pack(side='right', fill='both', expand=True, padx=20, pady=20)
 
-        tk.Label(izquierda, text="Capturar Producto", font=('Arial', 18), bg='white').pack(pady=10)
+        tk.Label(izquierda, text="Capturar Datos del Cliente", font=('Arial', 18), bg='white').pack(pady=10)
 
         campos = [
             ("ID:", "id"),

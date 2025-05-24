@@ -6,6 +6,7 @@ from InicioInterfaz import MainView #Obtiene la funcion MainView de InicioInterf
 from logininterfaz import LoginView, RegisterView, messagebox #Obtiene las funciones LoginView, RegisterView y messagebox de logininterfaz.py
 from ajustesinterfaz import SettingView
 from userdataview import UserDataView
+from backup_manager import BackupManager
 import tkinter as tk #Importa Tkinter
 
 
@@ -17,10 +18,39 @@ class AppController:
         self.main_view = None #Obtiene main_view
         self.login_view = LoginView(self.root, self) #Obtiene LoginView de la interfaz de login
         self.register_view = None #Obtiene register_view
+        self.backup_manager = BackupManager()
         self.root.withdraw() #Oculta la ventana
         self.login_view.entry_contraseña.bind("<Return>", self.login)# Enlazar evento <Return> al campo de contraseña
     
-    
+    def show_backup_settings(self):
+        """Muestra la configuración de backup (solo admin)"""
+        if self.model.is_admin(self.current_user):
+            self.backup_manager.show_backup_settings()
+        else:
+            messagebox.showerror("Error", "Solo administradores pueden configurar backups")
+        success, message = self.backup_manager.select_backup_path()
+        messagebox.showinfo("Configuración de Backup", message)
+        
+    # Cambia el método make_automatic_backup a:
+    def make_automatic_backup(self, username):
+        """Verifica y realiza backup si es necesario según la programación"""
+        if self.model.is_admin(username):
+            if self.backup_manager.should_make_backup():
+                backup_path = self.backup_manager.get_backup_path()
+                if backup_path:
+                    success, message = self.backup_manager.create_backup()
+                    if success:
+                        print(f"Backup semanal realizado: {message}")
+                    else:
+                        print(f"Error en backup semanal: {message}")
+                else:
+                    print("Backup no realizado: Ruta no configurada")
+    def show_backup_settings(self):
+        """Muestra la configuración de backups"""
+        if self.model.is_admin(self.current_user):
+            self.backup_manager.show_backup_settings()
+        else:
+            messagebox.showerror("Error", "Solo administradores pueden configurar backups")
     #Funcion para Login
     def login(self, event=None):
         usuario = self.login_view.entry_usuario.get()
@@ -30,6 +60,9 @@ class AppController:
             self.model.registrar_login(usuario) 
             is_admin = self.model.is_admin(usuario)
             user_info = self.model.get_user_info(usuario)
+            self.current_user = usuario  # Añade esta línea para guardar el usuario actual
+            # Realizar backup automático
+            self.make_automatic_backup(usuario)
             
             # Verificar si tiene dirección y teléfono
             if not user_info[3] or not user_info[4]:  # address y number

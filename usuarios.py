@@ -495,3 +495,55 @@ class UserModel:
             print(f"Error al aplicar descuentos: {e}")
         finally:
             conn.close()
+    def obtener_historial_ventas(self):
+        """Obtiene todas las ventas registradas"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT v.id, v.cliente_nombre, v.usuario, v.fecha, v.total, 
+                GROUP_CONCAT(vd.producto_nombre || ' (x' || vd.cantidad || ')', ', ')
+            FROM ventas v
+            JOIN venta_detalle vd ON v.id = vd.venta_id
+            GROUP BY v.id
+            ORDER BY v.fecha DESC
+        """)
+        ventas = cursor.fetchall()
+        conn.close()
+        return ventas
+
+    def obtener_productos_mas_vendidos(self, fecha_inicio=None, fecha_fin=None):
+        """Obtiene los productos más vendidos en un período"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT vd.producto_id, vd.producto_nombre, SUM(vd.cantidad) as total_vendido
+            FROM venta_detalle vd
+            JOIN ventas v ON vd.venta_id = v.id
+        """
+        
+        params = []
+        if fecha_inicio and fecha_fin:
+            query += " WHERE v.fecha BETWEEN ? AND ?"
+            params.extend([fecha_inicio, fecha_fin])
+        
+        query += " GROUP BY vd.producto_id ORDER BY total_vendido DESC LIMIT 5"
+        
+        cursor.execute(query, params)
+        productos = cursor.fetchall()
+        conn.close()
+        return productos
+
+    def obtener_productos_no_vendidos(self):
+        """Obtiene productos que nunca se han vendido"""
+        conn = sqlite3.connect(self.db_name)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT i.id, i.nombre, i.cantidad
+            FROM inventario i
+            LEFT JOIN venta_detalle vd ON i.id = vd.producto_id
+            WHERE vd.producto_id IS NULL
+        """)
+        productos = cursor.fetchall()
+        conn.close()
+        return productos

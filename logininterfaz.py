@@ -49,7 +49,7 @@ class LoginView(tk.Toplevel):
 
         btn_login = tk.Button(marco_botones, text="Ingresar", command=self.controller.login)
         btn_login.grid(row=0, column=0, padx=5)
-        btn_exit = tk.Button(marco_botones, text="Salir", command=sys.exit)
+        btn_exit = tk.Button(marco_botones, text="Salir", command=lambda: [self.destroy(), sys.exit()])
         btn_exit.grid(row=0, column=1, padx=5)
 
 #----Interfaz de Restro de nuevo usuario----
